@@ -1,43 +1,51 @@
 ## Simple Prefix Completer
 
-A simple prefix completion library for Node.js & Redis. Stores texts & their prefixes in redis according to the algorithm given by [antirez](https://github.com/antirez) [in this gist](https://gist.github.com/574044). The only scoring used is lexical sorting. No additional data is stored along with the texts. 
+A simple prefix completion library for Node.js & Redis. Stores texts & their prefixes in redis according to the algorithm given by [antirez](https://github.com/antirez) [in this gist](https://gist.github.com/574044). It's inefficient with space but leverages the redis sorted set data structure cleverly.
 
-The use case it was developed for is tag auto-completion, for which I needed no fancy datastructures or scoring approaches. It's inefficient with space in exchange for lookup speed.
+The use case it was developed for is tag auto-completion, for which I needed no fancy datastructures or scoring approaches. The only scoring used is lexical sorting. No additional data is stored along with the texts. All texts are stored and searched in lower case.
 
 ## Installation
 
-Clone the git repo and link it with `npm`. Or install the module:
+Clone the git repo and link it with `npm link`. Or install the module:
 
 `npm install prefix-completer`
 
 ## Usage
 
+Here's an example showing typical use: creating a completer dictionary,
+adding words to it, then requesting completions from it.
+
 ```javascript
 var completer = require('prefix-completer');
-var tags = completer.create( { db: 31 } );
+var async = require('async');
+
+// make a dictionary
+var tags = completer.create( { prefix: 'tags_', db: 31 } );
 console.log("zkey: "+tags.rediskey()); // -> 'completer'
 
-tags.flush(function(err, okay) 
+// make a second completion dictionary
+var usertags = completer.create( { prefix: 'user_', db: 31 });
+console.log("zkey: "+usertags.rediskey()); // -> 'user_completer'
+
+var wordlist = ['supernumary', ' superb ', 'Super', 'mary poppins', 'bert the sweep', 'codfish', 'sugar'];
+
+async.series(
+[
+	function(cb) { tags.flush(cb) }, // clear for the example
+	function(cb) { tags.add('supercalifragilisticexpialidocious', cb) }, // add a single word
+	function(cb) { tags.addList(wordlist, cb) }, // add a list of words
+	function(cb) { tags.complete('supe', 15, cb) }, // get completions for a prefix
+	function(cb) { usertags.complete('supe', 15, cb) } // get completions from another dictionary
+],
+function(err, results)
 {
-	tags.add('supercalifragilisticexpialidocious', function(err, added)
-	{
-		console.log('added '+added);
-		var wordlist = ['mary poppins', 'bert the sweep', 'codfish', 'sugar'];
-		tags.addList(wordlist, function(err, added)
-		{
-			console.log('added '+added.length+" completions ");
-			tags.complete('cod', 15, function(err, prefix, results) {
-				console.log(results);
-			});
-		});
-	});
-	
-	var usertags = completer.create( { prefix: 'user_', db: 31 });
-	console.log("zkey: "+usertags.rediskey()); // -> 'user_completer'
-	usertags.complete('cod', 15, function(err, prefix, results) {
-		console.log("user_ dictionary gave us: "+results); // results will be empty!
-	});
-});	
+	console.log("added 1 completion to dict: "+results[1]);
+	console.log('added '+results[2].length+" completions to dict");
+	console.log("found "+results[3][1].length+" completions for '"+results[3][0]+"':");
+	console.log(results[3][1]);
+	console.log("the user tags dictionary has "+results[4][1].length+" completions for 'supe'");
+	process.exit(0);
+});
 ```
 
 ## API
@@ -68,7 +76,7 @@ client
 
 `add(completion, callback(err, added))`
 
-Add a string to the completion dictionary. Responds with the exact string added. Leading & trailing space are removed and the string is converted to lowercase. If the string was already present, responds with null.
+Add a string to the completion dictionary. Leading & trailing space are removed and the string is converted to lowercase. Responds with the exact string added. If the string was already present, responds with null.
 
 ### addList()
 
