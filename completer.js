@@ -1,6 +1,7 @@
 var redis = require('redis');
 
 var ZKEY = 'completer'; // suffix of key used to store sorted set
+var RECORD_STATS = false; // for my curiosity, tracks how much space is used
 
 function Completer(options)
 {
@@ -40,18 +41,30 @@ Completer.prototype.rediskey = function()
 Completer.prototype.add = function(input, callback)
 {
 	var self = this;
-	var word = input.trim().toLowerCase();
-	self.redis.zrank(self.zkey, input+'*', function(err, position)
-	{
-		if (position !== null)
-			return callback(null, null); // word already in list
 
+	if (! input instanceof String) return callback("input not string", null);	
+	if (input.length == 0) return callback("no empty strings", null);
+
+	var word = input.trim().toLowerCase();
+	self.redis.zadd(self.zkey, 0, word+'*', function(err, numadded)
+	{
+		if (err) return callback(err, null);
+		if (numadded == 0) return callback(null, null); // word already in list
+
+		var pending = -1;
+		var prefixlens = 0;
 		for (var i=0; i < word.length; i++)
 		{
 			var prefix = word.slice(0, i);
-			self.redis.zadd(self.zkey, 0, prefix);
+			pending++;
+			self.redis.zadd(self.zkey, 0, prefix, function(err, numadded)
+			{
+				if (numadded == 1) prefixlens += prefix.length;
+				pending-- || self.recordPrefixLength(prefixlens);
+			});
 		}
-		self.redis.zadd(self.zkey, 0, word+'*', callback(null, word)); // splat to indicate leaf
+		self.recordLeaf(word+'*');
+		callback(err, word);
 	});
 };
 
@@ -59,7 +72,7 @@ Completer.prototype.addList = function(input, callback)
 {
 	var self = this;
 	var results = [];
-	var pending = 0;
+	var pending = -1;
 	for (var i=0; i<input.length; i++)
 	{
 		pending++;
@@ -70,7 +83,6 @@ Completer.prototype.addList = function(input, callback)
 			pending-- || callback(err, results);
 		});
 	}
-	pending-- || callback(err, results);
 };
 
 Completer.prototype.remove = function(input, callback)
@@ -90,7 +102,7 @@ Completer.prototype.remove = function(input, callback)
 			pending++;
 			self.redis.zrank(self.zkey, word+'*', function(err, start)
 			{
-				var rangelen = 2; // SHOULD BE 50
+				var rangelen = 50;
 				var right = start; // moves left by rangelen with each pass
 				var left = start; 
 				var done = false;
@@ -189,9 +201,33 @@ Completer.prototype.complete = function(input, count, callback)
 	});
 };
 
+
+Completer.prototype.recordLeaf = function(leaf)
+{
+	if (RECORD_STATS)
+	{
+		this.redis.incr(this.zkey + '_leaf_count');
+		this.redis.incrby(this.zkey + '_leaf_strlen', leaf.length);
+	}
+}
+
+Completer.prototype.recordPrefixLength = function(incr)
+{
+	if (RECORD_STATS) this.redis.incrby(this.zkey + '_prefix_strlen', incr);
+}
+
 Completer.prototype.flush = function(callback)
 {
-	this.redis.del(this.zkey, callback);
+	var pending = 3;
+	var cb = function(err, count)
+	{
+		pending-- || callback(err, 1);
+	};
+
+	this.redis.del(this.zkey, cb);
+	this.redis.set(this.zkey + '_leaf_count', 0, cb);
+	this.redis.set(this.zkey + '_leaf_strlen', 0, cb);
+	this.redis.set(this.zkey + '_prefix_strlen', 0, cb);
 };
 
 exports.create = function(options)

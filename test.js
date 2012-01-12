@@ -78,6 +78,16 @@ describe('prefix-completer', function()
 				done();
 			});
 		});
+		it('can add very long words', function(done)
+		{
+			var longword = 'supercalifragilisticexpialidocious';
+			completer.add(longword, function(err, added)
+			{
+				if (err) throw err;
+				added.should.equal(longword);
+				done();
+			});
+		});
 	});
 	describe('#addList()', function()
 	{
