@@ -2,6 +2,7 @@ var redis = require('redis');
 
 var ZKEY = 'completer'; // suffix of key used to store sorted set
 var RECORD_STATS = false; // for my curiosity, tracks how much space is used
+var RANGELEN = 50; // suggested by antirez
 
 function Completer(options)
 {
@@ -21,8 +22,8 @@ function Completer(options)
 	if ('db' in options)
 		this.redis.select(options.db);
 
-	if ('prefix' in options)
-		this.zkey = options.prefix + ZKEY;
+	if ('namespace' in options)
+		this.zkey = options.namespace + ZKEY;
 	else
 		this.zkey = ZKEY;
 };
@@ -43,9 +44,9 @@ Completer.prototype.add = function(input, callback)
 	var self = this;
 
 	if (! input instanceof String) return callback("input not string", null);	
-	if (input.length == 0) return callback("no empty strings", null);
-
 	var word = input.trim().toLowerCase();
+	if (word.length == 0) return callback("no empty strings", null);
+
 	self.redis.zadd(self.zkey, 0, word+'*', function(err, numadded)
 	{
 		if (err) return callback(err, null);
@@ -154,14 +155,14 @@ Completer.prototype.complete = function(input, count, callback)
 {
 	var self = this;
 	var prefix = input.trim().toLowerCase();
-	var rangelen = 50; // Suggested by antirez
+	var rangelen = RANGELEN;
 	var results = [];
 
 	self.redis.zrank(self.zkey, prefix, function(err, start)
 	{
 		if (err || start === null)
 		{
-			// No more hits. We might be an exact match for a leaf, however.
+			// No hits. The prefix might be an exact match for a leaf, however.
 			self.redis.zrank(self.zkey, prefix+'*', function(err, position)
 			{
 				if (position !== null)
@@ -180,11 +181,11 @@ Completer.prototype.complete = function(input, count, callback)
 			{
 				var item = range[i];
 
-				// have we moved past the range of relevant results?
+				// Have we moved past the range of relevant results?
 				if ((item.length < prefix.length) || (item.slice(0, prefix.length) !== prefix))
 					return callback(null, prefix, results);
 				
-				// we found a leaf node
+				// We found a leaf node.
 				if (item[item.length - 1] === '*')
 				{
 					results.push(item.slice(0, -1)); // trim the *
@@ -218,16 +219,19 @@ Completer.prototype.recordPrefixLength = function(incr)
 
 Completer.prototype.flush = function(callback)
 {
-	var pending = 3;
+	var pending = (RECORD_STATS ? 3 : 0);
 	var cb = function(err, count)
 	{
 		pending-- || callback(err, 1);
 	};
 
 	this.redis.del(this.zkey, cb);
-	this.redis.set(this.zkey + '_leaf_count', 0, cb);
-	this.redis.set(this.zkey + '_leaf_strlen', 0, cb);
-	this.redis.set(this.zkey + '_prefix_strlen', 0, cb);
+	if (RECORD_STATS)
+	{
+		this.redis.set(this.zkey + '_leaf_count', 0, cb);
+		this.redis.set(this.zkey + '_leaf_strlen', 0, cb);
+		this.redis.set(this.zkey + '_prefix_strlen', 0, cb);
+	}
 };
 
 exports.create = function(options)

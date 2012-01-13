@@ -6,7 +6,7 @@
   "keywords"        : ["redis", "autocomplete", "completer" ],
   "author"          : "C J Silverio <ceejceej@gmail.com>",
   "dependencies"    : { "redis": "0.7.x" },
-  "devDependencies" : { "mocha": "0.9.x", "chai": "0.1.x" },
+  "devDependencies" : { "mocha": "0.9.x", "chai": "0.1.x", "async": "0.1.x" },
   "scripts"         : {"test": "mocha -R spec test.js"},
   "repository"      : { "type": "git",
                         "url" : "git://github.com/ceejbot/prefix-completer.git" },
