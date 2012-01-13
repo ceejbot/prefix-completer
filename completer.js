@@ -88,7 +88,10 @@ Completer.prototype.remove = function(input, callback)
 {
 	var self = this;
 	var removed = false;
+
+	if (! input instanceof String) return callback("input not string", null);	
 	var word = input.trim().toLowerCase();
+	if (word.length == 0) return callback("no empty strings", null);
 
 	self.redis.zrank(self.zkey, word, function(err, rank)
 	{
@@ -144,7 +147,6 @@ Completer.prototype.remove = function(input, callback)
 			if (count == 1) removed = true;
 			pending-- || callback(err, removed);
 		});
-
 	});
 };
 
@@ -152,8 +154,11 @@ Completer.prototype.remove = function(input, callback)
 Completer.prototype.complete = function(input, count, callback)
 {
 	var self = this;
-	var prefix = input.trim().toLowerCase();
 	var results = [];
+
+	if (! input instanceof String) return callback("input not string", null);	
+	var prefix = input.trim().toLowerCase();
+	if (prefix.length == 0) return callback("no empty strings", null);
 
 	self.redis.zrank(self.zkey, prefix, function(err, start)
 	{
