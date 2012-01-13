@@ -24,7 +24,7 @@ describe('prefix-completer', function()
 		host: 'localhost',
 		port: 6379,
 		db: 31,
-		prefix: '_test_'
+		keyprefix: '_test_'
 	};
 	var completer;
 
@@ -53,7 +53,7 @@ describe('prefix-completer', function()
 		});
 		it('sets the redis key namespace', function()
 		{
-			completer.rediskey().indexOf(config.prefix).should.equal(0);
+			completer.rediskey().indexOf(config.keyprefix).should.equal(0);
 		});
 	});
 	
@@ -237,5 +237,17 @@ describe('prefix-completer', function()
 			});
 		});
 	});
-
+	describe('#statistics()', function()
+	{
+		it('calculates storage usage statistics', function(done)
+		{
+			completer.statistics(function(err, results)
+			{
+				results.leaves.should.equal(11);
+				results.total.should.equal(81);
+				results.leaflen.should.equal(125);
+				done();
+			});
+		});
+	});
 });

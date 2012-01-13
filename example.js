@@ -2,11 +2,11 @@ var completer = require('prefix-completer');
 var async = require('async');
 
 // make a dictionary
-var tags = completer.create( { prefix: 'tags_', db: 31 } );
+var tags = completer.create( { keyprefix: 'tags_', db: 31 } );
 console.log("zkey: "+tags.rediskey()); // -> 'completer'
 
 // make a second completion dictionary
-var usertags = completer.create( { prefix: 'user_', db: 31 });
+var usertags = completer.create( { keyprefix: 'user_', db: 31 });
 console.log("zkey: "+usertags.rediskey()); // -> 'user_completer'
 
 var wordlist = ['supernumary', ' superb ', 'Super', 'mary poppins', 'bert the sweep', 'codfish', 'sugar'];

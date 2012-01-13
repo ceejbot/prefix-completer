@@ -1,7 +1,6 @@
 var redis = require('redis');
 
 var ZKEY = 'completer'; // suffix of key used to store sorted set
-var RECORD_STATS = false; // for my curiosity, tracks how much space is used
 var RANGELEN = 50; // suggested by antirez
 
 function Completer(options)
@@ -22,8 +21,8 @@ function Completer(options)
 	if ('db' in options)
 		this.redis.select(options.db);
 
-	if ('namespace' in options)
-		this.zkey = options.namespace + ZKEY;
+	if ('keyprefix' in options)
+		this.zkey = options.keyprefix + ZKEY;
 	else
 		this.zkey = ZKEY;
 };
@@ -39,6 +38,7 @@ Completer.prototype.rediskey = function()
 	return this.zkey;
 };
 
+// callback(err, exactCompletionAdded)
 Completer.prototype.add = function(input, callback)
 {
 	var self = this;
@@ -53,22 +53,19 @@ Completer.prototype.add = function(input, callback)
 		if (numadded == 0) return callback(null, null); // word already in list
 
 		var pending = -1;
-		var prefixlens = 0;
 		for (var i=0; i < word.length; i++)
 		{
 			var prefix = word.slice(0, i);
 			pending++;
 			self.redis.zadd(self.zkey, 0, prefix, function(err, numadded)
 			{
-				if (numadded == 1) prefixlens += prefix.length;
-				pending-- || self.recordPrefixLength(prefixlens);
+				pending-- || callback(err, word);
 			});
 		}
-		self.recordLeaf(word+'*');
-		callback(err, word);
 	});
 };
 
+// callback(err, newWordsArray)
 Completer.prototype.addList = function(input, callback)
 {
 	var self = this;
@@ -86,6 +83,7 @@ Completer.prototype.addList = function(input, callback)
 	}
 };
 
+// callback(err, boolRemoved)
 Completer.prototype.remove = function(input, callback)
 {
 	var self = this;
@@ -103,7 +101,6 @@ Completer.prototype.remove = function(input, callback)
 			pending++;
 			self.redis.zrank(self.zkey, word+'*', function(err, start)
 			{
-				var rangelen = 50;
 				var right = start; // moves left by rangelen with each pass
 				var left = start; 
 				var done = false;
@@ -128,17 +125,17 @@ Completer.prototype.remove = function(input, callback)
 					
 					if (!done)
 					{
-						right -= rangelen;
-						left -= rangelen;
+						right -= RANGELEN;
+						left -= RANGELEN;
 						pending++;
-						self.redis.zrange(self.zkey, right - rangelen + 1, right - 1, continuer);
+						self.redis.zrange(self.zkey, right - RANGELEN + 1, right - 1, continuer);
 					}
 
 					pending-- || callback(err, removed);
 				};
 				
 				// Yes, we're going backwards but not using zrevrange.
-				self.redis.zrange(self.zkey, right - rangelen + 1, right - 1, continuer);
+				self.redis.zrange(self.zkey, right - RANGELEN + 1, right - 1, continuer);
 			});
 		}
 		
@@ -151,11 +148,11 @@ Completer.prototype.remove = function(input, callback)
 	});
 };
 
+// callback(err, exactprefix, completionsArray)
 Completer.prototype.complete = function(input, count, callback)
 {
 	var self = this;
 	var prefix = input.trim().toLowerCase();
-	var rangelen = RANGELEN;
 	var results = [];
 
 	self.redis.zrank(self.zkey, prefix, function(err, start)
@@ -194,44 +191,60 @@ Completer.prototype.complete = function(input, count, callback)
 				}
 			}
 			
-			start += rangelen;
-			self.redis.zrange(self.zkey, start, start + rangelen - 1, continuer);
+			start += RANGELEN;
+			self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
 		};
 
-		self.redis.zrange(self.zkey, start, start + rangelen - 1, continuer);
+		self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
 	});
 };
 
-
-Completer.prototype.recordLeaf = function(leaf)
-{
-	if (RECORD_STATS)
-	{
-		this.redis.incr(this.zkey + '_leaf_count');
-		this.redis.incrby(this.zkey + '_leaf_strlen', leaf.length);
-	}
-}
-
-Completer.prototype.recordPrefixLength = function(incr)
-{
-	if (RECORD_STATS) this.redis.incrby(this.zkey + '_prefix_strlen', incr);
-}
-
+// callback(err, numdeleted)
 Completer.prototype.flush = function(callback)
 {
-	var pending = (RECORD_STATS ? 3 : 0);
-	var cb = function(err, count)
-	{
-		pending-- || callback(err, 1);
-	};
+	this.redis.del(this.zkey, callback);
+};
 
-	this.redis.del(this.zkey, cb);
-	if (RECORD_STATS)
+// Calculate space usage info, to satisfy my curiosity about overhead.
+// callback(err, results)
+// where results is a hash.
+Completer.prototype.statistics = function(callback)
+{
+	var self = this;
+	self.redis.zcard(self.zkey, function(err, count)
 	{
-		this.redis.set(this.zkey + '_leaf_count', 0, cb);
-		this.redis.set(this.zkey + '_leaf_strlen', 0, cb);
-		this.redis.set(this.zkey + '_prefix_strlen', 0, cb);
-	}
+		var start = 0;
+		var results =
+		{
+			leaves: 0,
+			leaflen: 0,
+			prefixlen: 0,
+			total: count
+		};
+		
+		var continuer = function(err, range)
+		{
+			if (err || !range || range.length === 0)
+				return callback(err, results);
+
+			for (var i = 0; i < range.length; i++)
+			{
+				var item = range[i];
+				if (item[item.length - 1] === '*')
+				{
+					results.leaves += 1;
+					results.leaflen += (item.length - 1);
+				}
+				else
+					results.prefixlen += item.length;
+			}
+			
+			start += RANGELEN;
+			self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
+		};
+	
+		self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
+	});
 };
 
 exports.create = function(options)

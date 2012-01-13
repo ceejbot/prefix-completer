@@ -4,16 +4,11 @@ var auto = require('prefix-completer');
 var redis = require('redis');
 var fs = require('fs');
 var lazy = require('lazy');
-var async = require('async');
 
 var config = {
-	host: 'thusia.local',
 	db: 30,
-	prefix: '_sizetest_'
+	keyprefix: '_sizetest_'
 };
-
-var completer = auto.create(config);
-var r = completer.client();
 
 function populateFromDict(callback)
 {
@@ -42,37 +37,22 @@ function newTests(callback)
 {
 	completer.flush(function() 
 	{
-		populateFromDict(function()
-		{
-			var result = completer.stats();
-			console.log("in-memory counters: "+result);
-			callback();
-		});
+		populateFromDict(callback);
 	});
 }
 
 function getCounts()
 {
 	console.log("redis counts are:");
-	async.series(
-	[
-		function(cb) { r.get(completer.zkey+'_leaf_count', cb) },
-		function(cb) { r.get(completer.zkey+'_leaf_strlen', cb) },
-		function(cb) { r.get(completer.zkey+'_prefix_strlen', cb) },
-		function(cb) { r.zcard(completer.zkey, cb) }
-	],
-	function(err, results)
+	completer.statistics(function(err, results)
 	{
-		console.log("     leaf count: "+results[0]);
-		console.log("  leaf strs len: "+results[1]);
-		console.log("prefix strs len: "+results[2]);
-		console.log("          zcard: "+results[3]);
-		var end = new Date().getTime()/1000;
-		console.log("   elapsed time: "+(end-start)+" sec");
-		process.exit(0);
+		console.log(results);
+		completer.flush(process.exit(0));
 	});
-
 }
+
+var completer = auto.create(config);
+var r = completer.client();
 
 var start = new Date().getTime()/1000;
 newTests(getCounts);
