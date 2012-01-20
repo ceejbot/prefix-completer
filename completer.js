@@ -254,6 +254,5 @@ Completer.prototype.statistics = function(callback)
 
 exports.create = function(options)
 {
-	var completer = new Completer(options);
-	return completer;
+	return new Completer(options);
 };

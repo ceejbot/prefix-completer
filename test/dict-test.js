@@ -1,6 +1,6 @@
 // Stick /usr/dict/words into the dictionary and see what we end up with.
 
-var auto = require('prefix-completer');
+var auto = require('../prefix-completer');
 var redis = require('redis');
 var fs = require('fs');
 var lazy = require('lazy');

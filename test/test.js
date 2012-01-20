@@ -1,7 +1,7 @@
 var redis = require('redis');
 var should = require('chai').should();
 	
-var prefixcompleter = require('./completer');
+var prefixcompleter = require('../completer');
 
 var wordlist = [
 	'aaaaa',
