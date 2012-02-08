@@ -21,10 +21,8 @@ var wordlist = [
 describe('prefix-completer', function()
 {
 	var config = {
-		host: 'localhost',
-		port: 6379,
-		db: 31,
-		keyprefix: '_test_'
+		db: 0,
+		keyprefix: '_completer_test_'
 	};
 	var completer;
 
@@ -48,8 +46,14 @@ describe('prefix-completer', function()
 		{
 			var rc = completer.client();
 			(rc instanceof redis.RedisClient).should.be.ok;
-			rc.port.should.equal(config.port);
-			rc.host.should.equal(config.host);
+			if (config.port !== undefined)
+				rc.port.should.equal(config.port);
+			else
+				rc.port.should.equal(6379);
+			if (config.host !== undefined)
+				rc.host.should.equal(config.host);
+			else
+				rc.host.should.equal('127.0.0.1');
 		});
 		it('sets the redis key namespace', function()
 		{
