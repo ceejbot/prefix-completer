@@ -1,5 +1,7 @@
 ## Simple Prefix Completer
 
+[![Build Status](https://secure.travis-ci.org/ceejbot/prefix-completer.png)](http://travis-ci.org/ceejbot/prefix-completer)
+
 A simple prefix completion library for Node.js & Redis. Stores texts & their prefixes in redis according to the algorithm given by [antirez](https://github.com/antirez) [in this gist](https://gist.github.com/574044). It's inefficient with space but leverages the redis sorted set data structure cleverly.
 
 The use case it was developed for is tag auto-completion, for which I needed no fancy datastructures or scoring approaches. The only scoring used is lexical sorting. No additional data is stored along with the texts. All texts are stored and searched in lower case.
