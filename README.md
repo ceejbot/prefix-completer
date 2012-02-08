@@ -58,20 +58,11 @@ function(err, results)
 
 Create a completion dictionary. Synchronous. Takes optional hash of parameters. Valid parameters:
 
-host
-: string specifying redis host (defaults to localhost)
-
-port
-: integer specifying redis port (defaults to 6379)
-
-db
-: integer specifying the redis database to select (defaults to 0)
-
-prefix
-: a short string prefix for the redis sorted set key; used to namespace lookup dictionaries
-
-client
-: an existing RedisClient
+__host__: string specifying redis host (defaults to localhost)  
+__port__: integer specifying redis port (defaults to 6379)  
+__db__: integer specifying the redis database to select (defaults to 0)  
+__prefix__: a short string prefix for the redis sorted set key; used to namespace lookup dictionaries  
+__client__: an existing RedisClient
 
 
 ### add()
@@ -104,3 +95,13 @@ Removes the specified completion from the dictionary. Responds with true if succ
 
 Delete the key used to store this dictionary set. Passes the callback straight through to the redis DEL call, which responds with the number of keys deleted.
 
+### statistics()
+
+`statistics(callback(err, results))`
+
+Get statistics on the current state of the completion database. Responds with a hash containing the following keys:
+
+__total__: total number of entries in the database  
+__leaves__: number of completion phrases stored  
+__leaflen__: characters used for completion phrases  
+__prefixlen__: characters used for prefix storage
