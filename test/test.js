@@ -46,11 +46,11 @@ describe('prefix-completer', function()
 		{
 			var rc = completer.client();
 			(rc instanceof redis.RedisClient).should.be.ok;
-			if (config.port !== undefined)
+			if (config.port)
 				rc.port.should.equal(config.port);
 			else
 				rc.port.should.equal(6379);
-			if (config.host !== undefined)
+			if (config.host)
 				rc.host.should.equal(config.host);
 			else
 				rc.host.should.equal('127.0.0.1');

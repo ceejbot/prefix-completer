@@ -11,7 +11,7 @@ function Completer(options)
 		this.redis = options.client;
 	else if (('port' in options) || ('host' in options))
 	{
-		var port = options.port? parseInt(options.port) : 6379;
+		var port = options.port? parseInt(options.port, 10) : 6379;
 		var host = options.host || 'localhost';
 		this.redis = redis.createClient(options.port, options.host);
 	}
@@ -25,7 +25,7 @@ function Completer(options)
 		this.zkey = options.keyprefix + ZKEY;
 	else
 		this.zkey = ZKEY;
-};
+}
 exports.Completer = Completer;
 
 Completer.prototype.client = function()
@@ -45,12 +45,12 @@ Completer.prototype.add = function(input, callback)
 
 	if (! input instanceof String) return callback("input not string", null);	
 	var word = input.trim().toLowerCase();
-	if (word.length == 0) return callback("no empty strings", null);
+	if (word.length === 0) return callback("no empty strings", null);
 
 	self.redis.zadd(self.zkey, 0, word+'*', function(err, numadded)
 	{
 		if (err) return callback(err, null);
-		if (numadded == 0) return callback(null, null); // word already in list
+		if (numadded === 0) return callback(null, null); // word already in list
 
 		var pending = -1;
 		for (var i=0; i < word.length; i++)
@@ -91,7 +91,7 @@ Completer.prototype.remove = function(input, callback)
 
 	if (! input instanceof String) return callback("input not string", null);	
 	var word = input.trim().toLowerCase();
-	if (word.length == 0) return callback("no empty strings", null);
+	if (word.length === 0) return callback("no empty strings", null);
 
 	self.redis.zrank(self.zkey, word, function(err, rank)
 	{
@@ -144,7 +144,7 @@ Completer.prototype.remove = function(input, callback)
 		
 		self.redis.zrem(self.zkey, word+'*', function(err, count)
 		{
-			if (count == 1) removed = true;
+			if (count === 1) removed = true;
 			pending-- || callback(err, removed);
 		});
 	});
@@ -158,7 +158,7 @@ Completer.prototype.complete = function(input, count, callback)
 
 	if (! input instanceof String) return callback("input not string", null);	
 	var prefix = input.trim().toLowerCase();
-	if (prefix.length == 0) return callback("no empty strings", null);
+	if (prefix.length === 0) return callback("no empty strings", null);
 
 	self.redis.zrank(self.zkey, prefix, function(err, start)
 	{
@@ -173,7 +173,7 @@ Completer.prototype.complete = function(input, count, callback)
 			});
 			return;
 		}
-		  
+
 		var continuer = function(err, range)
 		{
 			if (err || !range || range.length === 0)
