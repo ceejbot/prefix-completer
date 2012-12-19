@@ -57,12 +57,12 @@ describe('prefix-completer', function()
 		it('obeys the host and port options', function()
 		{
 			var comp = prefixcompleter.create({
-				host: 'example.com',
-				port: 8000
+				host: '127.0.0.1',
+				port: 6379
 			});
 			var rc = comp.client();
-			assert.equal(rc.port, 8000);
-			assert.equal(rc.host, 'example.com');
+			assert.equal(rc.port, 6379);
+			assert.equal(rc.host, '127.0.0.1');
 		});
 
 		it('sets the redis key namespace', function()
@@ -88,10 +88,10 @@ describe('prefix-completer', function()
 
 		it('uses an existing redis client if one is passed in', function()
 		{
-			var rc = redis.createClient(9000, 'example.com');
+			var rc = redis.createClient(6379, '127.0.0.1');
 			var comp = prefixcompleter.create({client: rc});
 			assert.equal(rc, comp.client());
-			assert.equal(9000, comp.client().port);
+			assert.equal(6379, comp.client().port);
 		});
 	});
 

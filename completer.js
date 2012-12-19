@@ -164,9 +164,12 @@ Completer.prototype.complete = function(input, count, callback)
 	var self = this;
 	var results = [];
 
-	if (! input instanceof String) return callback("input not string", null);
+	if (typeof input !== 'string')
+		return callback(new Error('complete() input not a string'));
+
 	var prefix = input.trim().toLowerCase();
-	if (prefix.length === 0) return callback("no empty strings", null);
+	if (prefix.length === 0)
+		return callback(null, []); // don't complete empty strings
 
 	self.redis.zrank(self.zkey, prefix, function(err, start)
 	{
