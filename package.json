@@ -2,7 +2,7 @@
 	"name": "prefix-completer",
 	"description": "Simple redis-backed library for managing and querying an autocomplete dictionary.",
 	"main": "completer",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"keywords": ["redis", "autocomplete", "completer"],
 	"author": "C J Silverio <ceejceej@gmail.com>",
 	"dependencies":
@@ -12,9 +12,9 @@
 	},
 	"devDependencies":
 	{
-		"mocha": "0.9.x",
-		"chai": "0.1.x",
-		"async": "0.1.x"
+		"mocha": "*",
+		"chai": "*",
+		"async": "*"
 	},
 	"scripts":
 	{

@@ -5,24 +5,23 @@ var RANGELEN = 50; // suggested by antirez
 
 function Completer(options)
 {
-	this.options = options = options || {};
-	
-	if ('client' in options)
+	this.options = options || {};
+	var port, host;
+
+	if (this.options.client)
 		this.redis = options.client;
-	else if (('port' in options) || ('host' in options))
-	{
-		var port = options.port? parseInt(options.port, 10) : 6379;
-		var host = options.host || 'localhost';
-		this.redis = redis.createClient(options.port, options.host);
-	}
 	else
-		this.redis = redis.createClient();
+	{
+		port = this.options.port ? parseInt(this.options.port, 10) : 6379;
+		host = this.options.host || 'localhost';
+		this.redis = redis.createClient(port, host);
+	}
 
-	if ('db' in options)
-		this.redis.select(options.db);
+	if (this.options.db)
+		this.redis.select(this.options.db);
 
-	if ('keyprefix' in options)
-		this.zkey = options.keyprefix + ZKEY;
+	if (this.options.keyprefix)
+		this.zkey = this.options.keyprefix + ZKEY;
 	else
 		this.zkey = ZKEY;
 }
@@ -43,23 +42,29 @@ Completer.prototype.add = function(input, callback)
 {
 	var self = this;
 
-	if (! input instanceof String) return callback("input not string", null);	
+	if (Array.isArray(input))
+		return this.addList(input, callback);
+
+	if (typeof input !== 'string')
+		return callback(new Error('input not string'));
+
 	var word = input.trim().toLowerCase();
-	if (word.length === 0) return callback("no empty strings", null);
+	if (word.length === 0)
+		return callback(new Error('no empty strings'));
 
 	self.redis.zadd(self.zkey, 0, word+'*', function(err, numadded)
 	{
-		if (err) return callback(err, null);
+		if (err) return callback(err);
 		if (numadded === 0) return callback(null, null); // word already in list
 
-		var pending = -1;
+		var pending = 0;
 		for (var i=0; i < word.length; i++)
 		{
 			var prefix = word.slice(0, i);
 			pending++;
 			self.redis.zadd(self.zkey, 0, prefix, function(err, numadded)
 			{
-				pending-- || callback(err, word);
+				--pending || callback(err, word);
 			});
 		}
 	});
@@ -71,7 +76,7 @@ Completer.prototype.addList = function(input, callback)
 	var self = this;
 	var results = [];
 	var pending = -1;
-	for (var i=0; i<input.length; i++)
+	for (var i = 0; i < input.length; i++)
 	{
 		pending++;
 		self.add(input[i], function(err, word)
@@ -89,9 +94,12 @@ Completer.prototype.remove = function(input, callback)
 	var self = this;
 	var removed = false;
 
-	if (! input instanceof String) return callback("input not string", null);	
+	if (typeof input !== 'string')
+		return callback(new Error('remove() input not a string'));
+
 	var word = input.trim().toLowerCase();
-	if (word.length === 0) return callback("no empty strings", null);
+	if (word.length === 0)
+		return callback(null, false);
 
 	self.redis.zrank(self.zkey, word, function(err, rank)
 	{
@@ -99,20 +107,20 @@ Completer.prototype.remove = function(input, callback)
 		if (rank === null)
 		{
 			// No matches for us exactly means that we are *not* a prefix
-			// for another completion. Therefore we have to climb the tree 
+			// for another completion. Therefore we have to climb the tree
 			// removing all prefixes for ourself until we hit another leaf.
 			pending++;
 			self.redis.zrank(self.zkey, word+'*', function(err, start)
 			{
 				var right = start; // moves left by rangelen with each pass
-				var left = start; 
+				var left = start;
 				var done = false;
-				
+
 				var continuer = function(err, range)
 				{
 					for (var i = range.length - 1; i >= 0; i--)
 					{
-						var item = range[i];						
+						var item = range[i];
 						if ((item[item.length - 1] === '*') || (item.length >= word.length))
 						{
 							left = left - range.length + i + 1;
@@ -125,7 +133,7 @@ Completer.prototype.remove = function(input, callback)
 							break;
 						}
 					}
-					
+
 					if (!done)
 					{
 						right -= RANGELEN;
@@ -136,12 +144,12 @@ Completer.prototype.remove = function(input, callback)
 
 					pending-- || callback(err, removed);
 				};
-				
+
 				// Yes, we're going backwards but not using zrevrange.
 				self.redis.zrange(self.zkey, right - RANGELEN + 1, right - 1, continuer);
 			});
 		}
-		
+
 		self.redis.zrem(self.zkey, word+'*', function(err, count)
 		{
 			if (count === 1) removed = true;
@@ -156,7 +164,7 @@ Completer.prototype.complete = function(input, count, callback)
 	var self = this;
 	var results = [];
 
-	if (! input instanceof String) return callback("input not string", null);	
+	if (! input instanceof String) return callback("input not string", null);
 	var prefix = input.trim().toLowerCase();
 	if (prefix.length === 0) return callback("no empty strings", null);
 
@@ -178,7 +186,7 @@ Completer.prototype.complete = function(input, count, callback)
 		{
 			if (err || !range || range.length === 0)
 				return callback(err, prefix, results);
-			
+
 			for (var i = 0; i < range.length; i++)
 			{
 				var item = range[i];
@@ -186,7 +194,7 @@ Completer.prototype.complete = function(input, count, callback)
 				// Have we moved past the range of relevant results?
 				if ((item.length < prefix.length) || (item.slice(0, prefix.length) !== prefix))
 					return callback(null, prefix, results);
-				
+
 				// We found a leaf node.
 				if (item[item.length - 1] === '*')
 				{
@@ -195,7 +203,7 @@ Completer.prototype.complete = function(input, count, callback)
 						return callback(null, prefix, results);
 				}
 			}
-			
+
 			start += RANGELEN;
 			self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
 		};
@@ -226,7 +234,7 @@ Completer.prototype.statistics = function(callback)
 			prefixlen: 0,
 			total: count
 		};
-		
+
 		var continuer = function(err, range)
 		{
 			if (err || !range || range.length === 0)
@@ -243,11 +251,11 @@ Completer.prototype.statistics = function(callback)
 				else
 					results.prefixlen += item.length;
 			}
-			
+
 			start += RANGELEN;
 			self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
 		};
-	
+
 		self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
 	});
 };
