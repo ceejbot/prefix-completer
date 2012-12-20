@@ -7,8 +7,8 @@
 	"author": "C J Silverio <ceejceej@gmail.com>",
 	"dependencies":
 	{
-		"hiredis": "0.1.x",
-		"redis": "0.7.x"
+		"hiredis": "*",
+		"redis": "*"
 	},
 	"devDependencies":
 	{

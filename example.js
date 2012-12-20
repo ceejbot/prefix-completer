@@ -1,13 +1,17 @@
-var completer = require('prefix-completer');
-var async = require('async');
+#!/usr/bin/env node
+
+var
+	completer = require('prefix-completer'),
+	async = require('async')
+	;
 
 // make a dictionary
-var tags = completer.create( { keyprefix: 'tags_', db: 31 } );
-console.log("zkey: "+tags.rediskey()); // -> 'completer'
+var tags = completer.create( { key: 'tagss', db: 31 } );
+console.log("zkey: "+tags.rediskey()); // -> 'tags'
 
 // make a second completion dictionary
-var usertags = completer.create( { keyprefix: 'user_', db: 31 });
-console.log("zkey: "+usertags.rediskey()); // -> 'user_completer'
+var usertags = completer.create( { key: 'users', db: 31 });
+console.log("zkey: "+usertags.rediskey()); // -> 'users'
 
 var wordlist = ['supernumary', ' superb ', 'Super', 'mary poppins', 'bert the sweep', 'codfish', 'sugar'];
 

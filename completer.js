@@ -1,27 +1,27 @@
 var redis = require('redis');
 
-var ZKEY = 'completer'; // suffix of key used to store sorted set
+var ZKEY = 'COMP'; // default key used to store sorted set
 var RANGELEN = 50; // suggested by antirez
 
 function Completer(options)
 {
-	this.options = options || {};
+	options = options || {};
 	var port, host;
 
-	if (this.options.client)
+	if (options.client)
 		this.redis = options.client;
 	else
 	{
-		port = this.options.port ? parseInt(this.options.port, 10) : 6379;
-		host = this.options.host || 'localhost';
+		port = options.port ? parseInt(options.port, 10) : 6379;
+		host = options.host || 'localhost';
 		this.redis = redis.createClient(port, host);
 	}
 
-	if (this.options.db)
-		this.redis.select(this.options.db);
+	if (options.db)
+		this.redis.select(options.db);
 
-	if (this.options.keyprefix)
-		this.zkey = this.options.keyprefix + ZKEY;
+	if (options.key)
+		this.zkey = options.key;
 	else
 		this.zkey = ZKEY;
 }
@@ -75,7 +75,7 @@ Completer.prototype.addList = function(input, callback)
 {
 	var self = this;
 	var results = [];
-	var pending = -1;
+	var pending = 0;
 	for (var i = 0; i < input.length; i++)
 	{
 		pending++;
@@ -83,7 +83,7 @@ Completer.prototype.addList = function(input, callback)
 		{
 			if (!err && word)
 				results.push(word);
-			pending-- || callback(err, results);
+			--pending || callback(err, results);
 		});
 	}
 };
@@ -173,7 +173,10 @@ Completer.prototype.complete = function(input, count, callback)
 
 	self.redis.zrank(self.zkey, prefix, function(err, start)
 	{
-		if (err || start === null)
+		if (err)
+			return callback(err, prefix, []);
+
+		if (!start)
 		{
 			// No hits. The prefix might be an exact match for a leaf, however.
 			self.redis.zrank(self.zkey, prefix+'*', function(err, position)
@@ -222,8 +225,7 @@ Completer.prototype.flush = function(callback)
 };
 
 // Calculate space usage info, to satisfy my curiosity about overhead.
-// callback(err, results)
-// where results is a hash.
+// callback(err, resultsHash)
 Completer.prototype.statistics = function(callback)
 {
 	var self = this;

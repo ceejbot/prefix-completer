@@ -24,7 +24,7 @@ describe('prefix-completer', function()
 {
 	var config = {
 		db: 0,
-		keyprefix: '_completer_test_',
+		key: '_completer_test_',
 		host: '127.0.0.1'
 	};
 	var completer;
@@ -67,10 +67,10 @@ describe('prefix-completer', function()
 
 		it('sets the redis key namespace', function()
 		{
-			var comp = prefixcompleter.create({ keyprefix: '_test_prefix' });
+			var comp = prefixcompleter.create({ key: '_test_prefix' });
 			var key = comp.rediskey();
 
-			assert.ok(key.indexOf('_test_prefix') > -1, 'redis key prefix option not respected');
+			assert.equal(key, '_test_prefix', 'redis key prefix option not respected');
 		});
 
 		it('connects to the specified database', function(done)
