@@ -38,7 +38,7 @@ describe('prefix-completer', function()
 	{
 		completer.flush(function(err, count)
 		{
-			if (err) throw err;
+			should.not.exist(err);
 			count.should.equal(1);
 		});
 	});
