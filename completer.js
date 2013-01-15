@@ -112,6 +112,9 @@ Completer.prototype.remove = function(input, callback)
 			pending++;
 			self.redis.zrank(self.zkey, word+'*', function(err, start)
 			{
+				if (start === null)
+					return callback(null, false); // we're not in the dict at all
+
 				var right = start; // moves left by rangelen with each pass
 				var left = start;
 				var done = false;

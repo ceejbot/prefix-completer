@@ -263,6 +263,28 @@ describe('prefix-completer', function()
 			});
 		});
 
+		it('does nothing when asked to remove a completion that does not exist', function(done)
+		{
+			var key = completer.rediskey();
+			var r = completer.client();
+
+			r.zcard(key, function(err, startingSize)
+			{
+				should.not.exist(err);
+				completer.remove('yammer', function(err, removed)
+				{
+					should.not.exist(err);
+					removed.should.not.be.ok;
+					r.zcard(key, function(err, endingSize)
+					{
+						should.not.exist(err);
+						endingSize.should.equal(startingSize);
+						done();
+					});
+				});
+			});
+		});
+
 		it("doesn't remove completions for which the removed string is a prefix", function(done)
 		{
 			completer.complete('aaaab', 50, function(err, prefix, completions)
