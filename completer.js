@@ -103,60 +103,79 @@ Completer.prototype.remove = function(input, callback)
 
 	self.redis.zrank(self.zkey, word, function(err, rank)
 	{
-		var pending = 0;
+		var pending = 1;
+
+		function removePrefixes(start)
+		{
+			var right = start; // moves left by rangelen with each pass
+			var left = start;
+			var done = false;
+
+			var continuer = function(err, range)
+			{
+				for (var i = range.length - 1; i >= 0; i--)
+				{
+					var item = range[i];
+					if (!item.length || (item[item.length - 1] === '*') || (item.length >= word.length))
+					{
+						left = left - range.length + i + 1;
+						pending++;
+						self.redis.zremrangebyrank(self.zkey, left, start - 1, function(err, count)
+						{
+							--pending || callback(err, removed);
+						});
+						done = true;
+						break;
+					}
+				}
+
+				if (!done)
+				{
+					right -= RANGELEN;
+					left -= RANGELEN;
+					pending++;
+					self.redis.zrange(self.zkey, right - RANGELEN + 1, right - 1, continuer);
+				}
+
+				--pending || callback(err, removed);
+			};
+
+			// Yes, we're going backwards but not using zrevrange.
+			pending++;
+			self.redis.zrange(self.zkey, right - RANGELEN + 1, right - 1, continuer);
+		}
+
 		if (rank === null)
 		{
 			// No matches for us exactly means that we are *not* a prefix
 			// for another completion. Therefore we have to climb the tree
 			// removing all prefixes for ourself until we hit another leaf.
-			pending++;
-			self.redis.zrank(self.zkey, word+'*', function(err, start)
+			self.redis.zrank(self.zkey, word + '*', function(err, start)
 			{
 				if (start === null)
-					return callback(null, false); // we're not in the dict at all
+					return; // we're not in the dict at all
 
-				var right = start; // moves left by rangelen with each pass
-				var left = start;
-				var done = false;
-
-				var continuer = function(err, range)
+				// If the entry after us starts with our text, then we should delete nothing
+				// because all our prefixes are prefixes for that entry as well.
+				pending++;
+				self.redis.zrange(self.zkey, start, start + 1, function(err, range)
 				{
-					for (var i = range.length - 1; i >= 0; i--)
-					{
-						var item = range[i];
-						if ((item[item.length - 1] === '*') || (item.length >= word.length))
-						{
-							left = left - range.length + i + 1;
-							pending++;
-							self.redis.zremrangebyrank(self.zkey, left, start - 1, function(err, count)
-							{
-								pending-- || callback(err, removed);
-							});
-							done = true;
-							break;
-						}
-					}
+					--pending;
+					var nextEntry = range[0];
+					if (nextEntry && (nextEntry.indexOf(word.substring(0, word.length - 1)) === 0))
+						return (pending || callback(err, removed));
 
-					if (!done)
-					{
-						right -= RANGELEN;
-						left -= RANGELEN;
-						pending++;
-						self.redis.zrange(self.zkey, right - RANGELEN + 1, right - 1, continuer);
-					}
-
-					pending-- || callback(err, removed);
-				};
-
-				// Yes, we're going backwards but not using zrevrange.
-				self.redis.zrange(self.zkey, right - RANGELEN + 1, right - 1, continuer);
+					// We have work to do.
+					removePrefixes(start);
+				});
 			});
 		}
 
+		// Remove the leaf node that represents us.
 		self.redis.zrem(self.zkey, word+'*', function(err, count)
 		{
 			if (count === 1) removed = true;
-			pending-- || callback(err, removed);
+			--pending || callback(err, removed);
 		});
 	});
 };
@@ -173,6 +192,12 @@ Completer.prototype.complete = function(input, count, callback)
 	var prefix = input.trim().toLowerCase();
 	if (prefix.length === 0)
 		return callback(null, []); // don't complete empty strings
+
+	if (typeof count === 'function')
+	{
+		callback = count;
+		count = 50;
+	}
 
 	self.redis.zrank(self.zkey, prefix, function(err, start)
 	{
@@ -266,6 +291,42 @@ Completer.prototype.statistics = function(callback)
 
 		self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
 	});
+};
+
+Completer.prototype.leaves = function(callback)
+{
+	var self = this;
+
+	self.redis.zcard(self.zkey, function(err, count)
+	{
+		var start = 0;
+		var results = [];
+
+		var continuer = function(err, range)
+		{
+			if (err || !range || range.length === 0)
+				return callback(err, results);
+
+			for (var i = 0; i < range.length; i++)
+			{
+				var item = range[i];
+				if (item[item.length - 1] === '*')
+					results.push(item);
+			}
+
+			start += RANGELEN;
+			self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
+		};
+
+		self.redis.zrange(self.zkey, start, start + RANGELEN - 1, continuer);
+	});
+};
+
+Completer.prototype.dump = function(callback)
+{
+	// careful about calling this on giant dictionaries; use for debugging
+	var self = this;
+	self.redis.zrange(self.zkey, 0, -1, callback);
 };
 
 exports.create = function(options)

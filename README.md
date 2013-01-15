@@ -54,50 +54,50 @@ function(err, results)
 
 ### create()
 
-`create([options])`
+`completer = create([options])`
 
 Create a completion dictionary. Synchronous. Takes optional hash of parameters. Valid parameters:
 
 __host__: string specifying redis host (defaults to localhost)  
 __port__: integer specifying redis port (defaults to 6379)  
 __db__: integer specifying the redis database to select (defaults to 0)  
-__key__: a short string key for the redis sorted set key; change it to namespace lookup dictionaries (defaults to `COMP`)
+__key__: a short string key for the redis sorted set key; change it to namespace lookup dictionaries (defaults to `'COMP'`)
 __client__: an existing RedisClient
 
 
 ### add()
 
-`add(completion, function(err, added) {})`
+`completer.add(completion, function(err, added) {})`
 
-Add a string to the completion dictionary. Leading & trailing space are removed and the string is converted to lowercase. Responds with the exact string added. If the string was already present, responds with null.
+Add a string to the completion dictionary. Leading & trailing space are removed and the string is converted to lowercase. Responds with the exact string added. If the string was already present, responds with null. Can also accept an array of additions in the first parameter.
 
 ### addList()
 
-`add(stringlist, function(err, addedlist) {})`
+`completer.add(stringlist, function(err, addedlist) {})`
 
 Add an array of strings to the completion dictionary. Responds with an array of the exact strings added. Skips strings that were already present.
 
 ### complete()
 
-`complete(prefix, maxresults, function(err, prefixcleaned, completions) {})`
+`completer.complete(prefix, maxresults, function(err, prefixcleaned, completions) {})`
 
-Search for completions for the passed-in search string. Responds with the exact string searched for and an array of completions containing at most *maxresults* strings.
+Search for completions for the passed-in search string. Responds with the exact string searched for and an array of completions containing at most `maxresults` strings. The `maxresults` parameter is optional; it defaults to 50 if not passed.
 
 ### remove()
 
-`remove(completion, function(err, removed) {})`
+`completer.remove(completion, function(err, removed) {})`
 
 Removes the specified completion from the dictionary. Responds with true if successful.
 
 ### flush()
 
-`flush(function(err, count) {})`
+`completer.flush(function(err, count) {})`
 
 Delete the key used to store this dictionary set. Passes the callback straight through to the redis DEL call, which responds with the number of keys deleted.
 
 ### statistics()
 
-`statistics(callback(err, results))`
+`completer.statistics(function(err, results))`
 
 Get statistics on the current state of the completion database. Responds with a hash containing the following keys:
 
@@ -105,3 +105,15 @@ __total__: total number of entries in the database
 __leaves__: number of completion phrases stored  
 __leaflen__: characters used for completion phrases  
 __prefixlen__: characters used for prefix storage
+
+### leaves()
+
+`completer.leaves(function(err, leaves))`
+
+Responds with an array containing all leaf nodes in the dictionary, that is, every valid completion. Does not strip the terminating `*` characters.
+
+### dump()
+
+`completer.dump(function(err, items))`
+
+Responds with an array containing all the items stored in the dictionary. Perhaps useful for debugging.

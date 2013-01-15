@@ -1,3 +1,5 @@
+/*global describe:true, it:true, beforeEach: true, afterEach:true */
+
 var
 	assert = require('chai').assert,
 	should = require('chai').should(),
@@ -11,6 +13,7 @@ var wordlist = [
 	'aaaabbbb',
 	'restrain',
 	'restrained',
+	'restrainer',
 	'restraining',
 	'splat',
 	'splatted',
@@ -29,17 +32,22 @@ describe('prefix-completer', function()
 	};
 	var completer;
 
-	before(function()
+	beforeEach(function(done)
 	{
 		completer = prefixcompleter.create(config);
+		completer.addList(wordlist, function(err, results)
+		{
+			should.not.exist(err);
+			results.length.should.equal(wordlist.length);
+			done();
+		});
 	});
 
-	after(function()
+	afterEach(function()
 	{
 		completer.flush(function(err, count)
 		{
 			should.not.exist(err);
-			count.should.equal(1);
 		});
 	});
 
@@ -110,7 +118,7 @@ describe('prefix-completer', function()
 
 		it('doesn\'t add a string that already exists', function(done)
 		{
-			completer.add('nixy nox', function(err, added)
+			completer.add('restrain', function(err, added)
 			{
 				should.not.exist(err);
 				should.not.exist(added);
@@ -131,11 +139,11 @@ describe('prefix-completer', function()
 
 		it('can accept array input', function(done)
 		{
-			completer.add(['one'], function(err, added)
+			completer.add(['one1', 'two2'], function(err, added)
 			{
 				should.not.exist(err);
 				added.should.be.an('array');
-				assert.equal(added.length, 1);
+				assert.equal(added.length, 2);
 				done();
 			});
 		});
@@ -145,10 +153,11 @@ describe('prefix-completer', function()
 	{
 		it('adds all strings in the passed-in list', function(done)
 		{
-			completer.addList(wordlist, function(err, results)
+			var toAdd = ['test', 'this', 'list'];
+			completer.addList(toAdd, function(err, results)
 			{
 				should.not.exist(err);
-				results.length.should.equal(wordlist.length);
+				results.length.should.equal(toAdd.length);
 				done();
 			});
 		});
@@ -158,22 +167,22 @@ describe('prefix-completer', function()
 	{
 		it('finds completions', function(done)
 		{
-			completer.complete('nixy', 10, function(err, prefix, completions)
+			completer.complete('rest', 10, function(err, prefix, completions)
 			{
 				should.not.exist(err);
-				completions.length.should.equal(1);
-				completions[0].should.equal('nixy nox');
+				completions.length.should.equal(4);
+				completions[0].should.equal('restrain');
 				done();
 			});
 		});
 
 		it('finds a completion for an exact match', function(done)
 		{
-			completer.complete(' nixy Nox ', 10, function(err, prefix, completions)
+			completer.complete('zzzzz', 10, function(err, prefix, completions)
 			{
 				should.not.exist(err);
 				completions.length.should.equal(1);
-				completions[0].should.equal('nixy nox');
+				completions[0].should.equal('zzzzz');
 				done();
 			});
 		});
@@ -193,7 +202,7 @@ describe('prefix-completer', function()
 			completer.complete('restr', 50, function(err, prefix, completions)
 			{
 				should.not.exist(err);
-				completions.length.should.equal(3);
+				completions.length.should.equal(4);
 				done();
 			});
 		});
@@ -219,6 +228,37 @@ describe('prefix-completer', function()
 		});
 	});
 
+	describe('#leaves()', function()
+	{
+		it('returns an array of leaf nodes', function(done)
+		{
+			completer.leaves(function(err, leaves)
+			{
+				should.not.exist(err);
+				leaves.should.be.an('array');
+				leaves.length.should.equal(wordlist.length);
+				var item = leaves[0];
+				item[item.length - 1].should.equal('*');
+				leaves.indexOf(wordlist[2] + '*').should.equal(2);
+				done();
+			});
+		});
+	});
+
+	describe('#dump()', function()
+	{
+		it('returns the entire lookup dictionary', function(done)
+		{
+			completer.dump(function(err, members)
+			{
+				should.not.exist(err);
+				members.should.be.an('array');
+				members.length.should.equal(48);
+				done();
+			});
+		});
+	});
+
 	describe('#remove()', function()
 	{
 		it('removes the specified completion', function(done)
@@ -227,17 +267,49 @@ describe('prefix-completer', function()
 			{
 				should.not.exist(err);
 				removed.should.be.ok;
-				done();
+				completer.complete('zzz', 50, function(err, prefix, completions)
+				{
+					should.not.exist(err);
+					completions.length.should.equal(0);
+					done();
+				});
 			});
 		});
 
 		it('removes all prefixes for removed completion', function(done)
 		{
-			completer.complete('zzz', 50, function(err, prefix, completions)
+			completer.remove('zzzzz', function(err, removed)
 			{
 				should.not.exist(err);
-				completions.length.should.equal(0);
-				done();
+				removed.should.be.ok;
+				completer.complete('z', 50, function(err, prefix, completions)
+				{
+					should.not.exist(err);
+					completions.length.should.equal(0);
+					done();
+				});
+			});
+		});
+
+		it('declines to remove strings that are not leaves', function(done)
+		{
+			var key = completer.rediskey();
+			var r = completer.client();
+
+			r.zcard(key, function(err, startingSize)
+			{
+				should.not.exist(err);
+				completer.remove('restr', function(err, removed)
+				{
+					should.not.exist(err);
+					removed.should.equal(false);
+					r.zcard(key, function(err, endingSize)
+					{
+						should.not.exist(err);
+						endingSize.should.equal(startingSize);
+						done();
+					});
+				});
 			});
 		});
 
@@ -249,7 +321,7 @@ describe('prefix-completer', function()
 			r.zcard(key, function(err, startingSize)
 			{
 				should.not.exist(err);
-				completer.remove('aaaab', function(err, removed)
+				completer.remove('restrained', function(err, removed)
 				{
 					should.not.exist(err);
 					removed.should.be.ok;
@@ -257,8 +329,29 @@ describe('prefix-completer', function()
 					{
 						should.not.exist(err);
 						endingSize.should.equal(startingSize - 1);
-						done();
+						completer.complete('restraine', 15, function(err, prefix, completions)
+						{
+							should.not.exist(err);
+							completions.should.be.an('array');
+							completions.length.should.equal(1);
+							completions[0].should.equal('restrainer');
+							done();
+						});
 					});
+				});
+			});
+		});
+
+		it('removes completions with non-alphanumerics in them', function(done)
+		{
+			completer.add(['one1', 'two2'], function(err, added)
+			{
+				should.not.exist(err);
+				completer.remove('one1', function(err, removed)
+				{
+					should.not.exist(err);
+					removed.should.be.ok;
+					done();
 				});
 			});
 		});
@@ -287,12 +380,18 @@ describe('prefix-completer', function()
 
 		it("doesn't remove completions for which the removed string is a prefix", function(done)
 		{
-			completer.complete('aaaab', 50, function(err, prefix, completions)
+			completer.remove('restrain', function(err, removed)
 			{
 				should.not.exist(err);
-				completions.length.should.equal(1);
-				completions[0].should.equal('aaaabbbb');
-				done();
+				removed.should.be.ok;
+				completer.complete('restr', 50, function(err, prefix, completions)
+				{
+					should.not.exist(err);
+					completions.length.should.equal(3);
+					completions[0].should.equal('restrained');
+					completions[1].should.equal('restrainer');
+					done();
+				});
 			});
 		});
 
@@ -309,7 +408,6 @@ describe('prefix-completer', function()
 
 		it('handles edge case of removing at start of dictionary', function(done)
 		{
-			// paranoid edge case check. dict-end edge case handled above.
 			completer.remove('aaaaa', function(err, removed)
 			{
 				should.not.exist(err);
@@ -317,11 +415,12 @@ describe('prefix-completer', function()
 				completer.complete('a', 50, function(err, prefix, completions)
 				{
 					should.not.exist(err);
-					completions.length.should.equal(1);
+					completions.length.should.equal(2);
 					done();
 				});
 			});
 		});
+
 	});
 
 	describe('#statistics()', function()
@@ -330,9 +429,9 @@ describe('prefix-completer', function()
 		{
 			completer.statistics(function(err, results)
 			{
-				results.leaves.should.equal(12);
-				results.total.should.equal(84);
-				results.leaflen.should.equal(128);
+				results.leaves.should.equal(13);
+				results.total.should.equal(48);
+				results.leaflen.should.equal(108);
 				done();
 			});
 		});
