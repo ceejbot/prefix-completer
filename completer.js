@@ -93,6 +93,7 @@ Completer.prototype.remove = function(input, callback)
 {
 	var self = this;
 	var removed = false;
+	var commonPrefix;
 
 	if (typeof input !== 'string')
 		return callback(new Error('remove() input not a string'));
@@ -116,7 +117,8 @@ Completer.prototype.remove = function(input, callback)
 				for (var i = range.length - 1; i >= 0; i--)
 				{
 					var item = range[i];
-					if (!item.length || (item[item.length - 1] === '*') || (item.length >= word.length))
+
+					if (!item.length || (item === commonPrefix) || (item[item.length - 1] === '*') || (item.length >= word.length))
 					{
 						left = left - range.length + i + 1;
 						pending++;
@@ -155,17 +157,26 @@ Completer.prototype.remove = function(input, callback)
 				if (start === null)
 					return; // we're not in the dict at all
 
-				// If the entry after us starts with our text, then we should delete nothing
-				// because all our prefixes are prefixes for that entry as well.
+				// Examine the entry immediately after us & find its common prefix, if one
+				// exists. We will stop removing entries when we encounter that prefix.
 				pending++;
 				self.redis.zrange(self.zkey, start, start + 1, function(err, range)
 				{
 					--pending;
 					var nextEntry = range[0];
-					if (nextEntry && (nextEntry.indexOf(word.substring(0, word.length - 1)) === 0))
-						return (pending || callback(err, removed));
 
-					// We have work to do.
+					// Find the common prefix between us & the next entry.
+					if (nextEntry)
+					{
+						var ptr = 0;
+						var maxlen = Math.min(word.length, nextEntry.length);
+						while (word[ptr] === nextEntry[ptr] && (ptr < maxlen))
+							ptr++;
+
+						commonPrefix = word.substring(0, ptr);
+					}
+
+					// Now start removing.
 					removePrefixes(start);
 				});
 			});

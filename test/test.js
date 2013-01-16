@@ -378,7 +378,7 @@ describe('prefix-completer', function()
 			});
 		});
 
-		it("doesn't remove completions for which the removed string is a prefix", function(done)
+		it("refrains from removing prefixes for matches still in the dictionary, easy case", function(done)
 		{
 			completer.remove('restrain', function(err, removed)
 			{
@@ -391,6 +391,64 @@ describe('prefix-completer', function()
 					completions[0].should.equal('restrained');
 					completions[1].should.equal('restrainer');
 					done();
+				});
+			});
+		});
+
+		it('refrains from removing prefixes for matches still in the dictionary, better case', function(done)
+		{
+			var key = completer.rediskey();
+			var r = completer.client();
+
+			completer.add(['testone', 'testtwo'], function(err, added)
+			{
+				should.not.exist(err);
+				added.should.be.an('array');
+				added.length.should.equal(2);
+
+				r.zcard(key, function(err, startingSize)
+				{
+					completer.remove('testone', function(err, removed)
+					{
+						should.not.exist(err);
+						removed.should.be.ok;
+
+						r.zcard(key, function(err, endingSize)
+						{
+							should.not.exist.err;
+							endingSize.should.equal(startingSize - 3);
+							done();
+						});
+					});
+				});
+			});
+		});
+
+		it('removes in the boring no-shared-prefix case still', function(done)
+		{
+			var key = completer.rediskey();
+			var r = completer.client();
+
+			completer.add(['testone', 'testtwo'], function(err, added)
+			{
+				should.not.exist(err);
+				added.should.be.an('array');
+				added.length.should.equal(2);
+
+				r.zcard(key, function(err, startingSize)
+				{
+					completer.remove('testtwo', function(err, removed)
+					{
+						should.not.exist(err);
+						removed.should.be.ok;
+
+						r.zcard(key, function(err, endingSize)
+						{
+							should.not.exist.err;
+							endingSize.should.equal(startingSize - 3);
+							done();
+						});
+					});
 				});
 			});
 		});

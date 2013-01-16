@@ -2,7 +2,7 @@
 	"name": "prefix-completer",
 	"description": "Simple redis-backed library for managing and querying an autocomplete dictionary.",
 	"main": "completer",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"keywords": ["redis", "autocomplete", "completer"],
 	"author": "C J Silverio <ceejceej@gmail.com>",
 	"dependencies":
