@@ -1,6 +1,6 @@
 ## Simple Prefix Completer
 
-[![Build Status](https://secure.travis-ci.org/ceejbot/prefix-completer.png)](http://travis-ci.org/ceejbot/prefix-completer)
+[![on npm](http://img.shields.io/npm/v/prefix-completer.svg?style=flat)](https://www.npmjs.org/package/prefix-completer)  [![Tests](http://img.shields.io/travis/ceejbot/prefix-completer.svg?style=flat)](http://travis-ci.org/ceejbot/prefix-completer) ![Coverage](http://img.shields.io/badge/coverage-93%25-green.svg?style=flat) [![Dependencies](http://img.shields.io/david/ceejbot/prefix-completer.svg?style=flat)](https://david-dm.org/ceejbot/prefix-completer)
 
 A simple prefix completion library for [node.js](http://nodejs.org/) & [Redis](http://redis.io/). Stores texts & their prefixes in redis according to the algorithm given by [antirez](https://github.com/antirez) [in this gist](https://gist.github.com/574044). It's inefficient with space but leverages the redis sorted set data structure cleverly.
 

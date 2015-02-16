@@ -1,10 +1,9 @@
 /*global describe:true, it:true, beforeEach: true, afterEach:true */
 
 var
-	assert = require('chai').assert,
-	should = require('chai').should(),
+	demand          = require('must'),
 	prefixcompleter = require('../completer'),
-	redis = require('redis')
+	redis           = require('redis')
 	;
 
 var wordlist = [
@@ -37,8 +36,8 @@ describe('prefix-completer', function()
 		completer = prefixcompleter.create(config);
 		completer.addList(wordlist, function(err, results)
 		{
-			should.not.exist(err);
-			results.length.should.equal(wordlist.length);
+			demand(err).not.exist();
+			results.length.must.equal(wordlist.length);
 			done();
 		});
 	});
@@ -47,7 +46,7 @@ describe('prefix-completer', function()
 	{
 		completer.flush(function(err, count)
 		{
-			should.not.exist(err);
+			demand(err).not.exist();
 		});
 	});
 
@@ -57,9 +56,7 @@ describe('prefix-completer', function()
 		{
 			var comp = prefixcompleter.create();
 			var rc = comp.client();
-
-			assert.equal(rc.port, 6379);
-			assert.equal(rc.host, 'localhost');
+			rc.address.must.equal('localhost:6379');
 		});
 
 		it('obeys the host and port options', function()
@@ -69,8 +66,7 @@ describe('prefix-completer', function()
 				port: 6379
 			});
 			var rc = comp.client();
-			assert.equal(rc.port, 6379);
-			assert.equal(rc.host, '127.0.0.1');
+			rc.address.must.equal('127.0.0.1:6379');
 		});
 
 		it('sets the redis key namespace', function()
@@ -78,7 +74,7 @@ describe('prefix-completer', function()
 			var comp = prefixcompleter.create({ key: '_test_prefix' });
 			var key = comp.rediskey();
 
-			assert.equal(key, '_test_prefix', 'redis key prefix option not respected');
+			key.must.equal('_test_prefix', 'redis key prefix option not respected');
 		});
 
 		it('connects to the specified database', function(done)
@@ -87,9 +83,9 @@ describe('prefix-completer', function()
 			var rc = comp.client();
 			rc.ping(function(err, reply)
 			{
-				should.not.exist(err);
-				assert.equal(reply, 'PONG');
-				assert.equal(rc.selected_db, 6, 'constructor failed to obey db option');
+				demand(err).not.exist();
+				reply.must.equal('PONG');
+				rc.selected_db.must.equal(6, 'constructor failed to obey db option');
 				done();
 			});
 		});
@@ -98,8 +94,7 @@ describe('prefix-completer', function()
 		{
 			var rc = redis.createClient(6379, '127.0.0.1');
 			var comp = prefixcompleter.create({client: rc});
-			assert.equal(rc, comp.client());
-			assert.equal(6379, comp.client().port);
+			comp.client().must.eql(rc);
 		});
 	});
 
@@ -110,8 +105,8 @@ describe('prefix-completer', function()
 			var testWord = ' nixy Nox ';
 			completer.add(testWord, function(err, added)
 			{
-				should.not.exist(err);
-				added.should.equal('nixy nox');
+				demand(err).not.exist();
+				added.must.equal('nixy nox');
 				done();
 			});
 		});
@@ -120,8 +115,8 @@ describe('prefix-completer', function()
 		{
 			completer.add('restrain', function(err, added)
 			{
-				should.not.exist(err);
-				should.not.exist(added);
+				demand(err).not.exist();
+				demand(added).not.exist();
 				done();
 			});
 		});
@@ -131,8 +126,8 @@ describe('prefix-completer', function()
 			var longword = 'supercalifragilisticexpialidocious';
 			completer.add(longword, function(err, added)
 			{
-				should.not.exist(err);
-				added.should.equal(longword);
+				demand(err).not.exist();
+				added.must.equal(longword);
 				done();
 			});
 		});
@@ -141,9 +136,9 @@ describe('prefix-completer', function()
 		{
 			completer.add(['one1', 'two2'], function(err, added)
 			{
-				should.not.exist(err);
-				added.should.be.an('array');
-				assert.equal(added.length, 2);
+				demand(err).not.exist();
+				added.must.be.an.array();
+				added.length.must.equal(2);
 				done();
 			});
 		});
@@ -156,8 +151,8 @@ describe('prefix-completer', function()
 			var toAdd = ['test', 'this', 'list'];
 			completer.addList(toAdd, function(err, results)
 			{
-				should.not.exist(err);
-				results.length.should.equal(toAdd.length);
+				demand(err).not.exist();
+				results.length.must.equal(toAdd.length);
 				done();
 			});
 		});
@@ -169,9 +164,9 @@ describe('prefix-completer', function()
 		{
 			completer.complete('rest', 10, function(err, prefix, completions)
 			{
-				should.not.exist(err);
-				completions.length.should.equal(4);
-				completions[0].should.equal('restrain');
+				demand(err).not.exist();
+				completions.length.must.equal(4);
+				completions[0].must.equal('restrain');
 				done();
 			});
 		});
@@ -180,9 +175,9 @@ describe('prefix-completer', function()
 		{
 			completer.complete('zzzzz', 10, function(err, prefix, completions)
 			{
-				should.not.exist(err);
-				completions.length.should.equal(1);
-				completions[0].should.equal('zzzzz');
+				demand(err).not.exist();
+				completions.length.must.equal(1);
+				completions[0].must.equal('zzzzz');
 				done();
 			});
 		});
@@ -191,8 +186,8 @@ describe('prefix-completer', function()
 		{
 			completer.complete('   RESTR', 50, function(err, prefix, completions)
 			{
-				should.not.exist(err);
-				prefix.should.equal('restr');
+				demand(err).not.exist();
+				prefix.must.equal('restr');
 				done();
 			});
 		});
@@ -201,8 +196,8 @@ describe('prefix-completer', function()
 		{
 			completer.complete('restr', 50, function(err, prefix, completions)
 			{
-				should.not.exist(err);
-				completions.length.should.equal(4);
+				demand(err).not.exist();
+				completions.length.must.equal(4);
 				done();
 			});
 		});
@@ -211,8 +206,8 @@ describe('prefix-completer', function()
 		{
 			completer.complete('restr', 1, function(err, prefix, completions)
 			{
-				should.not.exist(err);
-				completions.length.should.equal(1);
+				demand(err).not.exist();
+				completions.length.must.equal(1);
 				done();
 			});
 		});
@@ -221,8 +216,8 @@ describe('prefix-completer', function()
 		{
 			completer.complete('xxxxxx', 1, function(err, prefix, completions)
 			{
-				should.not.exist(err);
-				completions.length.should.equal(0);
+				demand(err).not.exist();
+				completions.length.must.equal(0);
 				done();
 			});
 		});
@@ -234,12 +229,12 @@ describe('prefix-completer', function()
 		{
 			completer.leaves(function(err, leaves)
 			{
-				should.not.exist(err);
-				leaves.should.be.an('array');
-				leaves.length.should.equal(wordlist.length);
+				demand(err).not.exist();
+				leaves.must.be.an.array();
+				leaves.length.must.equal(wordlist.length);
 				var item = leaves[0];
-				item[item.length - 1].should.equal('*');
-				leaves.indexOf(wordlist[2] + '*').should.equal(2);
+				item[item.length - 1].must.equal('*');
+				leaves.indexOf(wordlist[2] + '*').must.equal(2);
 				done();
 			});
 		});
@@ -251,9 +246,9 @@ describe('prefix-completer', function()
 		{
 			completer.dump(function(err, members)
 			{
-				should.not.exist(err);
-				members.should.be.an('array');
-				members.length.should.equal(48);
+				demand(err).not.exist();
+				members.must.be.an.array();
+				members.length.must.equal(48);
 				done();
 			});
 		});
@@ -265,12 +260,12 @@ describe('prefix-completer', function()
 		{
 			completer.remove('zzzzz', function(err, removed)
 			{
-				should.not.exist(err);
-				removed.should.be.ok;
+				demand(err).not.exist();
+				removed.must.exist();
 				completer.complete('zzz', 50, function(err, prefix, completions)
 				{
-					should.not.exist(err);
-					completions.length.should.equal(0);
+					demand(err).not.exist();
+					completions.length.must.equal(0);
 					done();
 				});
 			});
@@ -280,12 +275,12 @@ describe('prefix-completer', function()
 		{
 			completer.remove('zzzzz', function(err, removed)
 			{
-				should.not.exist(err);
-				removed.should.be.ok;
+				demand(err).not.exist();
+				removed.must.exist();
 				completer.complete('z', 50, function(err, prefix, completions)
 				{
-					should.not.exist(err);
-					completions.length.should.equal(0);
+					demand(err).not.exist();
+					completions.length.must.equal(0);
 					done();
 				});
 			});
@@ -298,15 +293,15 @@ describe('prefix-completer', function()
 
 			r.zcard(key, function(err, startingSize)
 			{
-				should.not.exist(err);
+				demand(err).not.exist();
 				completer.remove('restr', function(err, removed)
 				{
-					should.not.exist(err);
-					removed.should.equal(false);
+					demand(err).not.exist();
+					removed.must.equal(false);
 					r.zcard(key, function(err, endingSize)
 					{
-						should.not.exist(err);
-						endingSize.should.equal(startingSize);
+						demand(err).not.exist();
+						endingSize.must.equal(startingSize);
 						done();
 					});
 				});
@@ -320,21 +315,21 @@ describe('prefix-completer', function()
 
 			r.zcard(key, function(err, startingSize)
 			{
-				should.not.exist(err);
+				demand(err).not.exist();
 				completer.remove('restrained', function(err, removed)
 				{
-					should.not.exist(err);
-					removed.should.be.ok;
+					demand(err).not.exist();
+					removed.must.exist();
 					r.zcard(key, function(err, endingSize)
 					{
-						should.not.exist(err);
-						endingSize.should.equal(startingSize - 1);
+						demand(err).not.exist();
+						endingSize.must.equal(startingSize - 1);
 						completer.complete('restraine', 15, function(err, prefix, completions)
 						{
-							should.not.exist(err);
-							completions.should.be.an('array');
-							completions.length.should.equal(1);
-							completions[0].should.equal('restrainer');
+							demand(err).not.exist();
+							completions.must.be.an.array();
+							completions.length.must.equal(1);
+							completions[0].must.equal('restrainer');
 							done();
 						});
 					});
@@ -346,11 +341,11 @@ describe('prefix-completer', function()
 		{
 			completer.add(['one1', 'two2'], function(err, added)
 			{
-				should.not.exist(err);
+				demand(err).not.exist();
 				completer.remove('one1', function(err, removed)
 				{
-					should.not.exist(err);
-					removed.should.be.ok;
+					demand(err).not.exist();
+					removed.must.exist();
 					done();
 				});
 			});
@@ -363,15 +358,15 @@ describe('prefix-completer', function()
 
 			r.zcard(key, function(err, startingSize)
 			{
-				should.not.exist(err);
+				demand(err).not.exist();
 				completer.remove('yammer', function(err, removed)
 				{
-					should.not.exist(err);
-					removed.should.not.be.ok;
+					demand(err).not.exist();
+					demand(removed).be.falsy();
 					r.zcard(key, function(err, endingSize)
 					{
-						should.not.exist(err);
-						endingSize.should.equal(startingSize);
+						demand(err).not.exist();
+						endingSize.must.equal(startingSize);
 						done();
 					});
 				});
@@ -382,14 +377,14 @@ describe('prefix-completer', function()
 		{
 			completer.remove('restrain', function(err, removed)
 			{
-				should.not.exist(err);
-				removed.should.be.ok;
+				demand(err).not.exist();
+				removed.must.exist();
 				completer.complete('restr', 50, function(err, prefix, completions)
 				{
-					should.not.exist(err);
-					completions.length.should.equal(3);
-					completions[0].should.equal('restrained');
-					completions[1].should.equal('restrainer');
+					demand(err).not.exist();
+					completions.length.must.equal(3);
+					completions[0].must.equal('restrained');
+					completions[1].must.equal('restrainer');
 					done();
 				});
 			});
@@ -402,21 +397,21 @@ describe('prefix-completer', function()
 
 			completer.add(['testone', 'testtwo'], function(err, added)
 			{
-				should.not.exist(err);
-				added.should.be.an('array');
-				added.length.should.equal(2);
+				demand(err).not.exist();
+				added.must.be.an.array();
+				added.length.must.equal(2);
 
 				r.zcard(key, function(err, startingSize)
 				{
 					completer.remove('testone', function(err, removed)
 					{
-						should.not.exist(err);
-						removed.should.be.ok;
+						demand(err).not.exist();
+						removed.must.exist();
 
 						r.zcard(key, function(err, endingSize)
 						{
-							should.not.exist.err;
-							endingSize.should.equal(startingSize - 3);
+							demand(err).not.exist();
+							endingSize.must.equal(startingSize - 3);
 							done();
 						});
 					});
@@ -431,21 +426,21 @@ describe('prefix-completer', function()
 
 			completer.add(['testone', 'testtwo'], function(err, added)
 			{
-				should.not.exist(err);
-				added.should.be.an('array');
-				added.length.should.equal(2);
+				demand(err).not.exist();
+				added.must.be.an.array();
+				added.length.must.equal(2);
 
 				r.zcard(key, function(err, startingSize)
 				{
 					completer.remove('testtwo', function(err, removed)
 					{
-						should.not.exist(err);
-						removed.should.be.ok;
+						demand(err).not.exist();
+						removed.must.exist();
 
 						r.zcard(key, function(err, endingSize)
 						{
-							should.not.exist.err;
-							endingSize.should.equal(startingSize - 3);
+							demand(err).not.exist();
+							endingSize.must.equal(startingSize - 3);
 							done();
 						});
 					});
@@ -457,9 +452,9 @@ describe('prefix-completer', function()
 		{
 			completer.complete('splatterpunks', 50, function(err, prefix, completions)
 			{
-				should.not.exist(err);
-				completions.length.should.equal(1);
-				completions[0].should.equal('splatterpunks');
+				demand(err).not.exist();
+				completions.length.must.equal(1);
+				completions[0].must.equal('splatterpunks');
 				done();
 			});
 		});
@@ -468,12 +463,12 @@ describe('prefix-completer', function()
 		{
 			completer.remove('aaaaa', function(err, removed)
 			{
-				should.not.exist(err);
-				removed.should.be.ok;
+				demand(err).not.exist();
+				removed.must.exist();
 				completer.complete('a', 50, function(err, prefix, completions)
 				{
-					should.not.exist(err);
-					completions.length.should.equal(2);
+					demand(err).not.exist();
+					completions.length.must.equal(2);
 					done();
 				});
 			});
@@ -487,9 +482,9 @@ describe('prefix-completer', function()
 		{
 			completer.statistics(function(err, results)
 			{
-				results.leaves.should.equal(13);
-				results.total.should.equal(48);
-				results.leaflen.should.equal(108);
+				results.leaves.must.equal(13);
+				results.total.must.equal(48);
+				results.leaflen.must.equal(108);
 				done();
 			});
 		});

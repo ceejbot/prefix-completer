@@ -1,29 +1,47 @@
 {
-	"name": "prefix-completer",
-	"description": "Simple redis-backed library for managing and querying an autocomplete dictionary.",
-	"main": "completer",
-	"version": "0.2.3",
-	"keywords": ["redis", "autocomplete", "completer"],
-	"author": "C J Silverio <ceejceej@gmail.com>",
-	"dependencies":
-	{
-		"hiredis": "*",
-		"redis": "*"
-	},
-	"devDependencies":
-	{
-		"mocha": "*",
-		"chai": "*",
-		"async": "*"
-	},
-	"scripts":
-	{
-		"test": "mocha -R spec test/test.js"
-	},
-	"repository":
-	{
-		"type": "git",
-		"url": "git://github.com/ceejbot/prefix-completer.git"
-	},
-	"bugs": "http://github.com/ceejbot/prefix-completer/issues"
+  "name": "prefix-completer",
+  "description": "Simple redis-backed library for managing and querying an autocomplete dictionary.",
+  "version": "0.2.3",
+  "author": "C J Silverio <ceejceej@gmail.com>",
+  "bugs": "http://github.com/ceejbot/prefix-completer/issues",
+  "config": {
+    "blanket": {
+      "pattern": "completer.js",
+      "data-cover-never": [
+        "node_modules",
+        "test"
+      ],
+      "output-reporter": "spec",
+      "travis-cov": {
+        "threshold": 90
+      }
+    }
+  },
+  "dependencies": {
+    "async": "~0.9.0",
+    "hiredis": "~0.2.0",
+    "redis": "~0.12.1"
+  },
+  "devDependencies": {
+    "blanket": "~1.1.6",
+    "mocha": "~2.1.0",
+    "mocoverage": "~1.0.0",
+    "must": "~0.12.0",
+    "travis-cov": "~0.2.5"
+  },
+  "keywords": [
+    "redis",
+    "autocomplete",
+    "completer"
+  ],
+  "main": "completer",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ceejbot/prefix-completer.git"
+  },
+  "scripts": {
+    "test": "mocha --check-leaks --ui exports --require blanket -R mocoverage test/test*.js",
+    "test-cov": "mocha --require blanket -R travis-cov test/test*.js",
+    "test-travis": "mocha -R spec test/test*.js && npm run test-cov"
+  }
 }
