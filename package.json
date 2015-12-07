@@ -1,7 +1,7 @@
 {
   "name": "prefix-completer",
   "description": "Simple redis-backed library for managing and querying an autocomplete dictionary.",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "author": "C J Silverio <ceejceej@gmail.com>",
   "bugs": "http://github.com/ceejbot/prefix-completer/issues",
   "config": {
@@ -18,16 +18,16 @@
     }
   },
   "dependencies": {
-    "async": "~0.9.0",
-    "hiredis": "~0.2.0",
-    "redis": "~0.12.1"
+    "async": "^1.5.0",
+    "hiredis": "^0.4.1",
+    "redis": "^2.4.2"
   },
   "devDependencies": {
-    "blanket": "~1.1.6",
-    "mocha": "~2.1.0",
-    "mocoverage": "~1.0.0",
-    "must": "~0.12.0",
-    "travis-cov": "~0.2.5"
+    "blanket": "^1.2.1",
+    "mocha": "^2.3.4",
+    "mocoverage": "^1.0.0",
+    "must": "^0.13.1",
+    "travis-cov": "^0.2.5"
   },
   "keywords": [
     "redis",
