@@ -1,18 +1,14 @@
 ## Simple Prefix Completer
 
-[![on npm](http://img.shields.io/npm/v/prefix-completer.svg?style=flat)](https://www.npmjs.org/package/prefix-completer)  [![Tests](http://img.shields.io/travis/ceejbot/prefix-completer.svg?style=flat)](http://travis-ci.org/ceejbot/prefix-completer) ![Coverage](http://img.shields.io/badge/coverage-93%25-green.svg?style=flat) [![Dependencies](http://img.shields.io/david/ceejbot/prefix-completer.svg?style=flat)](https://david-dm.org/ceejbot/prefix-completer)
+[![on npm](http://img.shields.io/npm/v/prefix-completer.svg?style=flat)](https://www.npmjs.org/package/prefix-completer)  [![Tests](http://img.shields.io/travis/ceejbot/prefix-completer.svg?style=flat)](http://travis-ci.org/ceejbot/prefix-completer) ![Coverage](http://img.shields.io/badge/coverage-91%25-green.svg?style=flat) [![Dependencies](http://img.shields.io/david/ceejbot/prefix-completer.svg?style=flat)](https://david-dm.org/ceejbot/prefix-completer)
 
 A simple prefix completion library for [node.js](http://nodejs.org/) & [Redis](http://redis.io/). Stores texts & their prefixes in redis according to the algorithm given by [antirez](https://github.com/antirez) [in this gist](https://gist.github.com/574044). It's inefficient with space but leverages the redis sorted set data structure cleverly.
 
 The use case it was developed for is tag auto-completion, for which I needed no fancy datastructures or scoring approaches. The only scoring used is lexical sorting. No additional data is stored along with the texts. All texts are stored and searched in lower case.
 
-## Installation
-
-Clone the git repo and link it with `npm link`. Or install the module:
+## Usage
 
 `npm install prefix-completer`
-
-## Usage
 
 Here's an example showing typical use: creating a completer dictionary,
 adding words to it, then requesting completions from it.
@@ -117,3 +113,7 @@ Responds with an array containing all leaf nodes in the dictionary, that is, eve
 `completer.dump(function(err, items))`
 
 Responds with an array containing all the items stored in the dictionary. Perhaps useful for debugging.
+
+## LICENSE
+
+MIT
