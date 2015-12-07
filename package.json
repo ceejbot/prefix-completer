@@ -23,6 +23,7 @@
     "redis": "~2.4.2"
   },
   "devDependencies": {
+    "eslint": "~1.10.3",
     "mocha": "~2.3.4",
     "must": "~0.13.1",
     "nyc": "~4.0.1"
@@ -38,7 +39,8 @@
     "url": "git://github.com/ceejbot/prefix-completer.git"
   },
   "scripts": {
+    "lint": "eslint *.js test/",
     "test": "nyc mocha -R spec test/test*.js",
-    "travis": "mocha -R spec test/test*.js"
+    "travis": "npm run lint && npm test"
   }
 }

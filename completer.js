@@ -55,13 +55,13 @@ Completer.prototype.add = function(input, callback)
 	if (word.length === 0)
 		return callback(new Error('no empty strings'));
 
-	self.redis.zadd(self.zkey, 0, word+'*', function(err, numadded)
+	self.redis.zadd(self.zkey, 0, word + '*', function(err, numadded)
 	{
 		if (err) return callback(err);
 		if (numadded === 0) return callback(null, null); // word already in list
 
 		var pending = 0;
-		for (var i=0; i < word.length; i++)
+		for (var i = 0; i < word.length; i++)
 		{
 			var prefix = word.slice(0, i);
 			pending++;
@@ -109,6 +109,7 @@ Completer.prototype.remove = function(input, callback)
 
 	self.redis.zrank(self.zkey, word, function(err, rank)
 	{
+		if (err) return callback(err);
 		var pending = 1;
 
 		function removePrefixes(start)
@@ -159,6 +160,7 @@ Completer.prototype.remove = function(input, callback)
 			// removing all prefixes for ourself until we hit another leaf.
 			self.redis.zrank(self.zkey, word + '*', function(err, start)
 			{
+				if (err) return callback(err);
 				if (start === null)
 					return; // we're not in the dict at all
 
@@ -167,6 +169,7 @@ Completer.prototype.remove = function(input, callback)
 				pending++;
 				self.redis.zrange(self.zkey, start, start + 1, function(err, range)
 				{
+					if (err) return callback(err);
 					--pending;
 					var nextEntry = range[0];
 
@@ -188,7 +191,7 @@ Completer.prototype.remove = function(input, callback)
 		}
 
 		// Remove the leaf node that represents us.
-		self.redis.zrem(self.zkey, word+'*', function(err, count)
+		self.redis.zrem(self.zkey, word + '*', function(err, count)
 		{
 			if (count === 1) removed = true;
 			--pending || callback(err, removed);
@@ -225,7 +228,7 @@ Completer.prototype.complete = function(input, count, callback)
 		if (!start)
 		{
 			// No hits. The prefix might be an exact match for a leaf, however.
-			self.redis.zrank(self.zkey, prefix+'*', function(err, position)
+			self.redis.zrank(self.zkey, prefix + '*', function(err, position)
 			{
 				if (position !== null)
 					results.push(prefix);
@@ -277,9 +280,9 @@ Completer.prototype.statistics = function(callback)
 	var self = this;
 	self.redis.zcard(self.zkey, function(err, count)
 	{
+		if (err) return callback(err);
 		var start = 0;
-		var results =
-		{
+		var results = {
 			leaves: 0,
 			leaflen: 0,
 			prefixlen: 0,
@@ -317,6 +320,7 @@ Completer.prototype.leaves = function(callback)
 
 	self.redis.zcard(self.zkey, function(err, count)
 	{
+		if (err) return callback(err);
 		var start = 0;
 		var results = [];
 

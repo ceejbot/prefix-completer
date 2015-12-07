@@ -415,7 +415,7 @@ describe('prefix-completer', function()
 			});
 		});
 
-		it("refrains from removing prefixes for matches still in the dictionary, easy case", function(done)
+		it('refrains from removing prefixes for matches still in the dictionary, easy case', function(done)
 		{
 			completer.remove('restrain', function(err, removed)
 			{
@@ -445,6 +445,7 @@ describe('prefix-completer', function()
 
 				r.zcard(key, function(err, startingSize)
 				{
+					demand(err).not.exist();
 					completer.remove('testone', function(err, removed)
 					{
 						demand(err).not.exist();
@@ -474,6 +475,7 @@ describe('prefix-completer', function()
 
 				r.zcard(key, function(err, startingSize)
 				{
+					demand(err).not.exist();
 					completer.remove('testtwo', function(err, removed)
 					{
 						demand(err).not.exist();
@@ -524,6 +526,7 @@ describe('prefix-completer', function()
 		{
 			completer.statistics(function(err, results)
 			{
+				demand(err).not.exist();
 				results.leaves.must.equal(13);
 				results.total.must.equal(48);
 				results.leaflen.must.equal(108);
