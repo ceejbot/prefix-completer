@@ -160,6 +160,28 @@ describe('prefix-completer', function()
 
 	describe('#complete()', function(done)
 	{
+		it('gracefully handles empty input', function(done)
+		{
+			completer.complete('', 10, function(err, prefix, completions)
+			{
+				demand(err).not.exist();
+				prefix.must.equal('');
+				completions.must.be.an.array();
+				completions.length.must.equal(0);
+				done();
+			});
+		});
+
+		it('responds with an error for non-string input', function(done)
+		{
+			completer.complete({}, 1, function(err, prefix, completions)
+			{
+				err.must.exist();
+				err.must.match(/string/);
+				done();
+			});
+		});
+
 		it('finds completions', function(done)
 		{
 			completer.complete('rest', 10, function(err, prefix, completions)
@@ -256,12 +278,32 @@ describe('prefix-completer', function()
 
 	describe('#remove()', function()
 	{
+		it('does nothing for null input', function(done)
+		{
+			completer.remove('', function(err, removed)
+			{
+				demand(err).not.exist();
+				removed.must.be.false();
+				done();
+			});
+		});
+
+		it('responds with an error for non-string input', function(done)
+		{
+			completer.remove({}, function(err, removed)
+			{
+				err.must.exist();
+				err.must.match(/string/);
+				done();
+			});
+		});
+
 		it('removes the specified completion', function(done)
 		{
 			completer.remove('zzzzz', function(err, removed)
 			{
 				demand(err).not.exist();
-				removed.must.exist();
+				removed.must.be.true();
 				completer.complete('zzz', 50, function(err, prefix, completions)
 				{
 					demand(err).not.exist();

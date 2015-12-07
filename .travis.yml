@@ -1,8 +1,11 @@
 sudo: false
 language: node_js
 node_js:
-  - iojs
+  - "4.*"
+  - "5.*"
   - "0.12"
   - "0.10"
 services:
   - redis-server
+script:
+  - npm run travis

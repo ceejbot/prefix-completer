@@ -42,6 +42,9 @@ Completer.prototype.add = function(input, callback)
 {
 	var self = this;
 
+	if (!input)
+		return callback(null, null);
+
 	if (Array.isArray(input))
 		return this.addList(input, callback);
 
@@ -95,6 +98,8 @@ Completer.prototype.remove = function(input, callback)
 	var removed = false;
 	var commonPrefix;
 
+	if (!input)
+		return callback(null, false);
 	if (typeof input !== 'string')
 		return callback(new Error('remove() input not a string'));
 
@@ -197,12 +202,14 @@ Completer.prototype.complete = function(input, count, callback)
 	var self = this;
 	var results = [];
 
+	if (!input)
+		return callback(null, '', []); // don't complete empty strings
 	if (typeof input !== 'string')
 		return callback(new Error('complete() input not a string'));
 
 	var prefix = input.trim().toLowerCase();
 	if (prefix.length === 0)
-		return callback(null, []); // don't complete empty strings
+		return callback(null, '', []);
 
 	if (typeof count === 'function')
 	{
