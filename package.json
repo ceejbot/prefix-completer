@@ -34,6 +34,6 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "lint": "eslint *.js test/",
     "test": "nyc mocha -R spec test/test*.js",
-    "travis": "npm run lint && npm test"
+    "travis": "npm run lint && npm test && npm run coverage"
   }
 }
