@@ -6,14 +6,14 @@
   "bugs": "http://github.com/ceejbot/prefix-completer/issues",
   "dependencies": {
     "async": "~1.5.2",
-    "redis": "~2.4.2"
+    "redis": "~2.5.0-1"
   },
   "devDependencies": {
-    "coveralls": "~2.11.6",
-    "eslint": "2.*",
+    "coveralls": "~2.11.8",
+    "eslint": "~2.3.0",
     "mocha": "2.*",
     "must": "~0.13.1",
-    "nyc": "6.0.0"
+    "nyc": "~6.0.0"
   },
   "homepage": "https://github.com/ceejbot/prefix-completer",
   "keywords": [
