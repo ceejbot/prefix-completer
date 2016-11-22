@@ -5,7 +5,7 @@
   "author": "C J Silverio <ceejceej@gmail.com>",
   "bugs": "http://github.com/ceejbot/prefix-completer/issues",
   "dependencies": {
-    "async": "~1.5.2",
+    "async": "~2.1.4",
     "redis": "~2.5.1"
   },
   "devDependencies": {
