@@ -5,15 +5,15 @@
   "author": "C J Silverio <ceejceej@gmail.com>",
   "bugs": "http://github.com/ceejbot/prefix-completer/issues",
   "dependencies": {
-    "async": "~1.5.2",
+    "async": "~2.3.0",
     "redis": "~2.7.1"
   },
   "devDependencies": {
-    "coveralls": "~2.11.8",
+    "coveralls": "~2.13.0",
     "eslint": "~2.9.0",
     "mocha": "2.*",
     "must": "~0.13.1",
-    "nyc": "~6.4.4"
+    "nyc": "~10.2.0"
   },
   "homepage": "https://github.com/ceejbot/prefix-completer",
   "keywords": [
