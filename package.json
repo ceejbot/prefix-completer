@@ -13,7 +13,7 @@
     "eslint": "~2.9.0",
     "mocha": "2.*",
     "must": "~0.13.1",
-    "nyc": "~6.4.4"
+    "nyc": "~8.0.0"
   },
   "homepage": "https://github.com/ceejbot/prefix-completer",
   "keywords": [
