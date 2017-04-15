@@ -6,7 +6,7 @@
   "bugs": "http://github.com/ceejbot/prefix-completer/issues",
   "dependencies": {
     "async": "~2.3.0",
-    "redis": "~2.5.1"
+    "redis": "~2.6.2"
   },
   "devDependencies": {
     "coveralls": "~2.13.0",
