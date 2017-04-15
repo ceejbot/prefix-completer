@@ -1,7 +1,7 @@
 {
   "name": "prefix-completer",
   "description": "Simple redis-backed library for managing and querying an autocomplete dictionary.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "C J Silverio <ceejceej@gmail.com>",
   "bugs": "http://github.com/ceejbot/prefix-completer/issues",
   "dependencies": {
