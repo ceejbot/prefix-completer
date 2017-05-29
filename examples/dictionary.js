@@ -1,10 +1,10 @@
 // Stick /usr/dict/words into the dictionary and see what we end up with.
 
-var auto = require('../prefix-completer');
-var fs = require('fs');
-var Lazy = require('lazy');
+const auto = require('prefix-completer');
+const fs = require('fs');
+const Lazy = require('lazy');
 
-var config = {
+const config = {
 	db: 30,
 	keyprefix: '_sizetest_'
 };
@@ -12,7 +12,7 @@ var config = {
 function populateFromDict(callback)
 {
 	var counter = 0;
-	var dict = fs.createReadStream('/usr/share/dict/web2');
+	const dict = fs.createReadStream('/usr/share/dict/web2');
 	new Lazy(dict)
 		.lines
 		.map(String)

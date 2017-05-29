@@ -1,12 +1,13 @@
 /*global describe:true, it:true, beforeEach: true, afterEach:true */
 
-var
+'use strict';
+const
 	demand          = require('must'),
-	prefixcompleter = require('../completer'),
+	prefixcompleter = require('./completer'),
 	redis           = require('redis')
 	;
 
-var wordlist = [
+const wordlist = [
 	'aaaaa',
 	'aaaab',
 	'aaaabbbb',
@@ -24,10 +25,9 @@ var wordlist = [
 
 describe('prefix-completer', function()
 {
-	var config = {
+	const config = {
 		db: 0,
 		key: '_completer_test_',
-		host: '127.0.0.1'
 	};
 	var completer;
 
@@ -55,24 +55,23 @@ describe('prefix-completer', function()
 		it('creates a default redis client when no options are passed', function()
 		{
 			var comp = prefixcompleter.create();
-			var rc = comp.client();
-			rc.address.must.equal('localhost:6379');
+			var rc = comp.redis;
+			rc.address.must.equal('127.0.0.1:6379');
 		});
 
-		it('obeys the host and port options', function()
+		it('obeys the redis option', function()
 		{
 			var comp = prefixcompleter.create({
-				host: '127.0.0.1',
-				port: 6379
+				redis: 'redis://example.com:5000'
 			});
-			var rc = comp.client();
-			rc.address.must.equal('127.0.0.1:6379');
+			var rc = comp.redis;
+			rc.address.must.equal('example.com:5000');
 		});
 
 		it('sets the redis key namespace', function()
 		{
 			var comp = prefixcompleter.create({ key: '_test_prefix' });
-			var key = comp.rediskey();
+			var key = comp.rediskey;
 
 			key.must.equal('_test_prefix', 'redis key prefix option not respected');
 		});
@@ -80,7 +79,7 @@ describe('prefix-completer', function()
 		it('connects to the specified database', function(done)
 		{
 			var comp = prefixcompleter.create({ db: 6 });
-			var rc = comp.client();
+			var rc = comp.redis;
 			rc.ping(function(err, reply)
 			{
 				demand(err).not.exist();
@@ -94,7 +93,7 @@ describe('prefix-completer', function()
 		{
 			var rc = redis.createClient(6379, '127.0.0.1');
 			var comp = prefixcompleter.create({client: rc});
-			comp.client().must.eql(rc);
+			comp.redis.must.eql(rc);
 		});
 	});
 
@@ -172,12 +171,14 @@ describe('prefix-completer', function()
 			});
 		});
 
-		it('responds with an error for non-string input', function(done)
+		it('gracefully handles non-string input', function(done)
 		{
 			completer.complete({}, 1, function(err, prefix, completions)
 			{
-				err.must.exist();
-				err.must.match(/string/);
+				demand(err).not.exist();
+				prefix.must.equal('');
+				completions.must.be.an.array();
+				completions.length.must.equal(0);
 				done();
 			});
 		});
@@ -288,12 +289,12 @@ describe('prefix-completer', function()
 			});
 		});
 
-		it('responds with an error for non-string input', function(done)
+		it('gracefully ignores non-string input', function(done)
 		{
 			completer.remove({}, function(err, removed)
 			{
-				err.must.exist();
-				err.must.match(/string/);
+				demand(err).not.exist();
+				removed.must.be.false();
 				done();
 			});
 		});
@@ -330,8 +331,8 @@ describe('prefix-completer', function()
 
 		it('declines to remove strings that are not leaves', function(done)
 		{
-			var key = completer.rediskey();
-			var r = completer.client();
+			var key = completer.rediskey;
+			var r = completer.redis;
 
 			r.zcard(key, function(err, startingSize)
 			{
@@ -352,8 +353,8 @@ describe('prefix-completer', function()
 
 		it("doesn't remove prefixes for other completions", function(done)
 		{
-			var key = completer.rediskey();
-			var r = completer.client();
+			var key = completer.rediskey;
+			var r = completer.redis;
 
 			r.zcard(key, function(err, startingSize)
 			{
@@ -395,8 +396,8 @@ describe('prefix-completer', function()
 
 		it('does nothing when asked to remove a completion that does not exist', function(done)
 		{
-			var key = completer.rediskey();
-			var r = completer.client();
+			var key = completer.rediskey;
+			var r = completer.redis;
 
 			r.zcard(key, function(err, startingSize)
 			{
@@ -434,8 +435,8 @@ describe('prefix-completer', function()
 
 		it('refrains from removing prefixes for matches still in the dictionary, better case', function(done)
 		{
-			var key = completer.rediskey();
-			var r = completer.client();
+			var key = completer.rediskey;
+			var r = completer.redis;
 
 			completer.add(['testone', 'testtwo'], function(err, added)
 			{
@@ -464,8 +465,8 @@ describe('prefix-completer', function()
 
 		it('removes in the boring no-shared-prefix case still', function(done)
 		{
-			var key = completer.rediskey();
-			var r = completer.client();
+			var key = completer.rediskey;
+			var r = completer.redis;
 
 			completer.add(['testone', 'testtwo'], function(err, added)
 			{

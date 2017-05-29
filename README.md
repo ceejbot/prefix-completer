@@ -6,6 +6,8 @@ A simple prefix completion library for [node.js](http://nodejs.org/) & [Redis](h
 
 The use case it was developed for is tag auto-completion, for which I needed no fancy datastructures or scoring approaches. The only scoring used is lexical sorting. No additional data is stored along with the texts. All texts are stored and searched in lower case.
 
+Depends only on redis.
+
 ## Usage
 
 `npm install prefix-completer`
@@ -54,11 +56,10 @@ function(err, results)
 
 Create a completion dictionary. Synchronous. Takes optional hash of parameters. Valid parameters:
 
-__host__: string specifying redis host (defaults to localhost)  
-__port__: integer specifying redis port (defaults to 6379)  
-__db__: integer specifying the redis database to select (defaults to 0)  
-__key__: a short string key for the redis sorted set key; change it to namespace lookup dictionaries (defaults to `'COMP'`)
+__redis__: something to pass to redis's `createClient()`; can be a redis url
 __client__: an existing RedisClient
+__db__: integer specifying the redis database to select (defaults to 0)
+__key__: a short string key for the redis sorted set key; change it to namespace lookup dictionaries (defaults to `'COMP'`)
 
 
 ### add()
@@ -97,9 +98,9 @@ Delete the key used to store this dictionary set. Passes the callback straight t
 
 Get statistics on the current state of the completion database. Responds with a hash containing the following keys:
 
-__total__: total number of entries in the database  
-__leaves__: number of completion phrases stored  
-__leaflen__: characters used for completion phrases  
+__total__: total number of entries in the database
+__leaves__: number of completion phrases stored
+__leaflen__: characters used for completion phrases
 __prefixlen__: characters used for prefix storage
 
 ### leaves()

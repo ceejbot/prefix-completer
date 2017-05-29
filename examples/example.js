@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
-var
+const
 	completer = require('prefix-completer'),
 	async = require('async')
 	;
 
 // make a dictionary
-var tags = completer.create({ key: 'tagss', db: 31 });
+const tags = completer.create({ key: 'tagss', db: 31 });
 console.log('zkey: ' + tags.rediskey()); // -> 'tags'
 
 // make a second completion dictionary
-var usertags = completer.create({ key: 'users', db: 31 });
+const usertags = completer.create({ key: 'users', db: 31 });
 console.log('zkey: ' + usertags.rediskey()); // -> 'users'
 
-var wordlist = ['supernumary', ' superb ', 'Super', 'mary poppins', 'bert the sweep', 'codfish', 'sugar'];
+const wordlist = ['supernumary', ' superb ', 'Super', 'mary poppins', 'bert the sweep', 'codfish', 'sugar'];
 
 async.series([
 	function(cb) { tags.flush(cb); }, // clear for the example
