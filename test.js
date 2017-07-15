@@ -95,6 +95,15 @@ describe('prefix-completer', function()
 			var comp = prefixcompleter.create({client: rc});
 			comp.redis.must.eql(rc);
 		});
+
+		it('returns a promisified object', function()
+		{
+			var comp = prefixcompleter.create();
+			comp.must.have.property('add');
+			comp.add.must.be.a.function();
+			comp.must.have.property('addAsync');
+			comp.addAsync.must.be.a.function();
+		});
 	});
 
 	describe('#add()', function()

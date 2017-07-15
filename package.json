@@ -5,6 +5,7 @@
   "author": "C J Silverio <ceejceej@gmail.com>",
   "bugs": "http://github.com/ceejbot/prefix-completer/issues",
   "dependencies": {
+    "bluebird": "~3.5.0",
     "redis": "~2.7.1"
   },
   "devDependencies": {

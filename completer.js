@@ -1,5 +1,6 @@
 'use strict';
 
+const P = require('bluebird');
 const redis = require('redis');
 
 const ZKEY = 'COMP'; // default key used to store sorted set
@@ -9,7 +10,8 @@ module.exports = class Completer
 {
 	static create(options)
 	{
-		return new Completer(options);
+		const c = new Completer(options);
+		return P.promisifyAll(c);
 	}
 
 	constructor(opts)

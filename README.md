@@ -50,6 +50,8 @@ function(err, results)
 
 ## API
 
+All callback-accepting API functions also have a promise-returning `*-Async` version, created by Bluebird's promisify.
+
 ### create()
 
 `completer = create([options])`
