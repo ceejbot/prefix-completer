@@ -16,16 +16,16 @@ Here's an example showing typical use: creating a completer dictionary,
 adding words to it, then requesting completions from it.
 
 ```javascript
-var completer = require('prefix-completer');
-var async = require('async');
+const completer = require('prefix-completer');
+const async = require('async');
 
 // make a dictionary
-var tags = completer.create( { key: 'tags', db: 31 } );
-console.log("zkey: "+tags.rediskey()); // -> 'tags'
+const tags = completer.create( { key: 'tags', db: 31 } );
+console.log(`zkey: ${tags.rediskey}`); // -> 'tags'
 
 // make a second completion dictionary
 var usertags = completer.create( { key: 'users', db: 31 });
-console.log("zkey: "+usertags.rediskey()); // -> 'users'
+console.log(`zkey: ${usertags.rediskey}`); // -> 'usertags'
 
 var wordlist = ['supernumary', ' superb ', 'Super', 'mary poppins', 'bert the sweep', 'codfish', 'sugar'];
 
@@ -39,11 +39,11 @@ async.series(
 ],
 function(err, results)
 {
-	console.log("added 1 completion to dict: "+results[1]);
-	console.log('added '+results[2].length+" completions to dict");
-	console.log("found "+results[3][1].length+" completions for '"+results[3][0]+"':");
+	console.log(`added 1 completion to dict: ${results[1]}`);
+	console.log(`added ${results[2].length} completions to dict`);
+	console.log(`found ${results[3][1].length} completions for ${results[3][0]}:`);
 	console.log(results[3][1]);
-	console.log("the user tags dictionary has "+results[4][1].length+" completions for 'supe'");
+	console.log(`the user tags dictionary has ${results[4][1].length} completions for 'supe'`);
 	process.exit(0);
 });
 ```
